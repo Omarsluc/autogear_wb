@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../../../../core/data/catalog_repository.dart';
 import '../../../../core/models/auto_part.dart';
 import '../../../../core/theme/app_theme.dart';
+import '../../../cart/view/cart_screen.dart';
+import '../../../cart/viewmodel/cart_view_model.dart';
 
 class CatalogSection extends StatelessWidget {
   const CatalogSection({
@@ -239,6 +242,20 @@ class _PartCard extends StatelessWidget {
               const SizedBox(height: 12),
               Row(
                 children: [
+                  Expanded(
+                    child: OutlinedButton.icon(
+                      onPressed: part.inStock
+                          ? () => _addToCart(context, part)
+                          : null,
+                      icon: const Icon(Icons.add_shopping_cart, size: 18),
+                      label: const Text('Add to cart'),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
+              Row(
+                children: [
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                     decoration: BoxDecoration(
@@ -259,6 +276,24 @@ class _PartCard extends StatelessWidget {
               ),
             ],
           ),
+        ),
+      ),
+    );
+  }
+
+  void _addToCart(BuildContext context, AutoPart part) {
+    context.read<CartViewModel>().addPart(part);
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('${part.name} added to cart'),
+        action: SnackBarAction(
+          label: 'View cart',
+          onPressed: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const CartScreen()),
+            );
+          },
         ),
       ),
     );
@@ -288,10 +323,15 @@ class _PartCard extends StatelessWidget {
         ),
         actions: [
           TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Close')),
-          ElevatedButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: const Text('Request Quote'),
-          ),
+          if (part.inStock)
+            ElevatedButton.icon(
+              onPressed: () {
+                _addToCart(context, part);
+                Navigator.pop(ctx);
+              },
+              icon: const Icon(Icons.add_shopping_cart, size: 18),
+              label: const Text('Add to cart'),
+            ),
         ],
       ),
     );
