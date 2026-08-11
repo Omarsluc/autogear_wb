@@ -1,10 +1,11 @@
+import 'package:auto_gear_wb/features/home/view/widgets/app_header.dart';
+import 'package:auto_gear_wb/features/home/view/widgets/info_sections.dart';
 import 'package:flutter/material.dart';
-import '../data/catalog_data.dart';
-import '../models/auto_part.dart';
-import '../widgets/app_header.dart';
-import '../widgets/catalog_section.dart';
-import '../widgets/hero_section.dart';
-import '../widgets/info_sections.dart';
+
+import '../../../core/data/catalog_repository.dart';
+import '../../../core/models/auto_part.dart';
+import 'widgets/catalog_section.dart';
+import 'widgets/hero_section.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});

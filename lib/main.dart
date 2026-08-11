@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
-import 'screens/home_screen.dart';
-import 'theme/app_theme.dart';
+
+import 'core/theme/app_theme.dart';
+import 'features/home/view/home_screen.dart';
 
 void main() {
   runApp(const AutoGearApp());

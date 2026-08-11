@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import '../data/catalog_data.dart';
-import '../models/auto_part.dart';
-import '../theme/app_theme.dart';
+import '../../../../core/data/catalog_repository.dart';
+import '../../../../core/models/auto_part.dart';
+import '../../../../core/theme/app_theme.dart';
 
 class CatalogSection extends StatelessWidget {
   const CatalogSection({
