@@ -1,5 +1,6 @@
-import 'package:flutter/material.dart';
+import '../../../../../core/localization/app_strings.dart';
 import '../../../../../core/theme/app_theme.dart';
+import 'package:flutter/material.dart';
 
 class AboutSection extends StatelessWidget {
   const AboutSection({super.key});
@@ -38,7 +39,7 @@ class _AboutContent extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text('About Auto Gear', style: Theme.of(context).textTheme.headlineMedium),
+        Text(AppStrings.tr(context, 'about_title'), style: Theme.of(context).textTheme.headlineMedium),
         const SizedBox(height: 16),
         Text(
           'Your Trusted Global Auto Parts Partner',

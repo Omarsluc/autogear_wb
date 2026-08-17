@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../core/theme/app_theme.dart';
-import '../viewmodel/auth_view_model.dart';
+import '../cubit/auth_cubit.dart';
+import '../cubit/auth_state.dart';
 
 enum AuthScreenMode { signIn, signUp }
 
@@ -48,15 +49,15 @@ class _AuthScreenState extends State<AuthScreen> {
   Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) return;
 
-    final auth = context.read<AuthViewModel>();
-    auth.clearError();
+    final authCubit = context.read<AuthCubit>();
+    authCubit.clearError();
 
     final success = _mode == AuthScreenMode.signIn
-        ? await auth.signIn(
+        ? await authCubit.signIn(
             email: _emailController.text.trim(),
             password: _passwordController.text,
           )
-        : await auth.signUp(
+        : await authCubit.signUp(
             email: _emailController.text.trim(),
             password: _passwordController.text,
             fullName: _nameController.text.trim().isEmpty
@@ -73,10 +74,11 @@ class _AuthScreenState extends State<AuthScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final auth = context.watch<AuthViewModel>();
-    final isSignUp = _mode == AuthScreenMode.signUp;
+    return BlocBuilder<AuthCubit, AppAuthState>(
+      builder: (context, authState) {
+        final isSignUp = _mode == AuthScreenMode.signUp;
 
-    return Scaffold(
+        return Scaffold(
       appBar: AppBar(
         title: Text(widget.checkoutFlow ? 'Sign in to checkout' : 'Account'),
       ),
@@ -113,7 +115,7 @@ class _AuthScreenState extends State<AuthScreen> {
                         textAlign: TextAlign.center,
                       ),
                       const SizedBox(height: 24),
-                      if (!auth.isSupabaseReady)
+                      if (!authState.isSupabaseReady)
                         Container(
                           padding: const EdgeInsets.all(12),
                           decoration: BoxDecoration(
@@ -194,17 +196,19 @@ class _AuthScreenState extends State<AuthScreen> {
                           return null;
                         },
                       ),
-                      if (auth.errorMessage != null) ...[
+                      if (authState.errorMessage != null) ...[
                         const SizedBox(height: 16),
                         Text(
-                          auth.errorMessage!,
+                          authState.errorMessage!,
                           style: TextStyle(color: Colors.red.shade700),
                         ),
                       ],
                       const SizedBox(height: 24),
                       ElevatedButton(
-                        onPressed: auth.isLoading || !auth.isSupabaseReady ? null : _submit,
-                        child: auth.isLoading
+                        onPressed: authState.isLoading || !authState.isSupabaseReady
+                            ? null
+                            : _submit,
+                        child: authState.isLoading
                             ? const SizedBox(
                                 height: 20,
                                 width: 20,
@@ -214,10 +218,10 @@ class _AuthScreenState extends State<AuthScreen> {
                       ),
                       const SizedBox(height: 12),
                       TextButton(
-                        onPressed: auth.isLoading
+                        onPressed: authState.isLoading
                             ? null
                             : () {
-                                auth.clearError();
+                                context.read<AuthCubit>().clearError();
                                 setState(() {
                                   _mode = isSignUp
                                       ? AuthScreenMode.signIn
@@ -238,6 +242,8 @@ class _AuthScreenState extends State<AuthScreen> {
           ),
         ),
       ),
+    );
+      },
     );
   }
 }

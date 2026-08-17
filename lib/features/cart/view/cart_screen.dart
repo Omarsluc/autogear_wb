@@ -1,12 +1,15 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../core/models/cart_item.dart';
 import '../../../core/networking/supabase.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../auth/cubit/auth_cubit.dart';
+import '../../auth/cubit/auth_state.dart';
 import '../../auth/view/auth_screen.dart';
-import '../../auth/viewmodel/auth_view_model.dart';
-import '../viewmodel/cart_view_model.dart';
+import '../../orders/view/orders_screen.dart';
+import '../cubit/cart_cubit.dart';
+import '../cubit/cart_state.dart';
 
 class CartScreen extends StatefulWidget {
   const CartScreen({super.key});
@@ -19,12 +22,12 @@ class _CartScreenState extends State<CartScreen> {
   bool _isCheckingOut = false;
 
   Future<void> _checkout() async {
-    final auth = context.read<AuthViewModel>();
-    final cart = context.read<CartViewModel>();
+    final authState = context.read<AuthCubit>().state;
+    final cartCubit = context.read<CartCubit>();
 
-    if (cart.isEmpty) return;
+    if (cartCubit.state.isEmpty) return;
 
-    if (!auth.isAuthenticated) {
+    if (!authState.isAuthenticated) {
       final signedIn = await Navigator.push<bool>(
         context,
         MaterialPageRoute(
@@ -38,7 +41,7 @@ class _CartScreenState extends State<CartScreen> {
     setState(() => _isCheckingOut = true);
 
     try {
-      final order = await cart.checkout();
+      final order = await cartCubit.checkout();
 
       if (!mounted) return;
 
@@ -59,6 +62,16 @@ class _CartScreenState extends State<CartScreen> {
               },
               child: const Text('Done'),
             ),
+            ElevatedButton(
+              onPressed: () {
+                Navigator.pop(ctx);
+                Navigator.pushReplacement(
+                  context,
+                  MaterialPageRoute(builder: (_) => const OrdersScreen()),
+                );
+              },
+              child: const Text('View Orders'),
+            ),
           ],
         ),
       );
@@ -76,87 +89,91 @@ class _CartScreenState extends State<CartScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final cart = context.watch<CartViewModel>();
-    final auth = context.watch<AuthViewModel>();
-
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Cart'),
-        actions: [
-          if (!cart.isEmpty)
-            TextButton(
-              onPressed: cart.clear,
-              child: const Text('Clear', style: TextStyle(color: Colors.white)),
-            ),
-        ],
-      ),
-      body: cart.isEmpty
-          ? _EmptyCart(onBrowse: () => Navigator.pop(context))
-          : Column(
-              children: [
-                Expanded(
-                  child: ListView.separated(
-                    padding: const EdgeInsets.all(16),
-                    itemCount: cart.items.length,
-                    separatorBuilder: (_, __) => const SizedBox(height: 12),
-                    itemBuilder: (context, index) {
-                      final item = cart.items[index];
-                      return _CartItemTile(item: item);
-                    },
-                  ),
-                ),
-                Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.all(24),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    border: Border(top: BorderSide(color: AppColors.border)),
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Text(
-                            '${cart.itemCount} item${cart.itemCount == 1 ? '' : 's'}',
-                            style: Theme.of(context).textTheme.titleMedium,
+    return BlocBuilder<CartCubit, CartState>(
+      builder: (context, cartState) {
+        return BlocBuilder<AuthCubit, AppAuthState>(
+          builder: (context, authState) {
+            return Scaffold(
+              appBar: AppBar(
+                title: const Text('Cart'),
+                actions: [
+                  if (!cartState.isEmpty)
+                    TextButton(
+                      onPressed: () => context.read<CartCubit>().clear(),
+                      child: const Text('Clear', style: TextStyle(color: Colors.white)),
+                    ),
+                ],
+              ),
+              body: cartState.isEmpty
+                  ? _EmptyCart(onBrowse: () => Navigator.pop(context))
+                  : Column(
+                      children: [
+                        Expanded(
+                          child: ListView.separated(
+                            padding: const EdgeInsets.all(16),
+                            itemCount: cartState.items.length,
+                            separatorBuilder: (_, __) => const SizedBox(height: 12),
+                            itemBuilder: (context, index) {
+                              return _CartItemTile(item: cartState.items[index]);
+                            },
                           ),
-                          const Text(
-                            'Quote on request',
-                            style: TextStyle(
-                              fontWeight: FontWeight.w600,
-                              color: AppColors.primary,
-                            ),
-                          ),
-                        ],
-                      ),
-                      if (!auth.isAuthenticated) ...[
-                        const SizedBox(height: 8),
-                        const Text(
-                          'You will be asked to sign in before submitting your order.',
                         ),
-                      ] else ...[
-                        const SizedBox(height: 8),
-                        Text('Signed in as ${auth.displayName}'),
+                        Container(
+                          width: double.infinity,
+                          padding: const EdgeInsets.all(24),
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            border: Border(top: BorderSide(color: AppColors.border)),
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.stretch,
+                            children: [
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                children: [
+                                  Text(
+                                    '${cartState.itemCount} item${cartState.itemCount == 1 ? '' : 's'}',
+                                    style: Theme.of(context).textTheme.titleMedium,
+                                  ),
+                                  const Text(
+                                    'Quote on request',
+                                    style: TextStyle(
+                                      fontWeight: FontWeight.w600,
+                                      color: AppColors.primary,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              if (!authState.isAuthenticated) ...[
+                                const SizedBox(height: 8),
+                                const Text(
+                                  'You will be asked to sign in before submitting your order.',
+                                ),
+                              ] else ...[
+                                const SizedBox(height: 8),
+                                Text('Signed in as ${authState.displayName}'),
+                              ],
+                              const SizedBox(height: 16),
+                              ElevatedButton.icon(
+                                onPressed: _isCheckingOut ? null : _checkout,
+                                icon: _isCheckingOut
+                                    ? const SizedBox(
+                                        width: 18,
+                                        height: 18,
+                                        child: CircularProgressIndicator(strokeWidth: 2),
+                                      )
+                                    : const Icon(Icons.send_outlined),
+                                label: Text(_isCheckingOut ? 'Submitting...' : 'Checkout'),
+                              ),
+                            ],
+                          ),
+                        ),
                       ],
-                      const SizedBox(height: 16),
-                      ElevatedButton.icon(
-                        onPressed: _isCheckingOut ? null : _checkout,
-                        icon: _isCheckingOut
-                            ? const SizedBox(
-                                width: 18,
-                                height: 18,
-                                child: CircularProgressIndicator(strokeWidth: 2),
-                              )
-                            : const Icon(Icons.send_outlined),
-                        label: Text(_isCheckingOut ? 'Submitting...' : 'Checkout'),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
+                    ),
+            );
+          },
+        );
+      },
     );
   }
 }
@@ -199,7 +216,7 @@ class _CartItemTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final cart = context.read<CartViewModel>();
+    final cartCubit = context.read<CartCubit>();
 
     return Card(
       child: Padding(
@@ -216,7 +233,7 @@ class _CartItemTile extends StatelessWidget {
               children: [
                 IconButton.outlined(
                   onPressed: item.quantity > 1
-                      ? () => cart.updateQuantity(item.part, item.quantity - 1)
+                      ? () => cartCubit.updateQuantity(item.part, item.quantity - 1)
                       : null,
                   icon: const Icon(Icons.remove),
                 ),
@@ -228,13 +245,13 @@ class _CartItemTile extends StatelessWidget {
                   ),
                 ),
                 IconButton.outlined(
-                  onPressed: () => cart.updateQuantity(item.part, item.quantity + 1),
+                  onPressed: () => cartCubit.updateQuantity(item.part, item.quantity + 1),
                   icon: const Icon(Icons.add),
                 ),
                 const Spacer(),
                 IconButton(
                   tooltip: 'Remove',
-                  onPressed: () => cart.removePart(item.part),
+                  onPressed: () => cartCubit.removePart(item.part),
                   icon: const Icon(Icons.delete_outline, color: Colors.red),
                 ),
               ],

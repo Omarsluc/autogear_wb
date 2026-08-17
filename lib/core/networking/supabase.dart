@@ -10,15 +10,17 @@ import '../models/profile.dart';
 /// Pass at build/run time:
 /// `--dart-define=SUPABASE_URL=... --dart-define=SUPABASE_ANON_KEY=...`
 abstract final class SupabaseConfig {
-  static const url = String.fromEnvironment('SUPABASE_URL');
-  static const anonKey = String.fromEnvironment('SUPABASE_ANON_KEY');
+  static const supaUrl = "https://vrwgtpbeejpnnaoflrfy.supabase.co";
+  static const supaAnon = "sb_publishable_BEeJ9Ig5CURIz2Nmk489Lw_zcDL9jj1";
+  static const url = String.fromEnvironment('SUPABASE_URL', defaultValue: supaUrl);
+  static const anonKey = String.fromEnvironment('SUPABASE_ANON_KEY', defaultValue: supaAnon);
 
   static bool get isConfigured => url.isNotEmpty && anonKey.isNotEmpty;
 }
 
 abstract final class SupabaseTables {
   static const profiles = 'profiles';
-  static const brands = 'brands';
+  // static const brands = 'brands';
   static const parts = 'parts';
   static const partCompatibility = 'part_compatibility';
   static const orders = 'orders';
@@ -247,46 +249,45 @@ class SupabaseService {
   // Brands
   // ---------------------------------------------------------------------------
 
-  Future<List<Brand>> fetchBrands() async {
-    try {
-      final data = await client
-          .from(SupabaseTables.brands)
-          .select()
-          .order('name');
-
-      return (data as List)
-          .cast<Map<String, dynamic>>()
-          .map(Brand.fromJson)
-          .toList();
-    } on PostgrestException catch (e) {
-      throw SupabaseServiceException(e.message, cause: e);
-    }
-  }
-
-  Future<Brand?> fetchBrandByName(String name) async {
-    try {
-      final data = await client
-          .from(SupabaseTables.brands)
-          .select()
-          .ilike('name', name)
-          .maybeSingle();
-
-      if (data == null) return null;
-      return Brand.fromJson(data);
-    } on PostgrestException catch (e) {
-      throw SupabaseServiceException(e.message, cause: e);
-    }
-  }
+  // Future<List<Brand>> fetchBrands() async {
+  //   try {
+  //     final data = await client
+  //         .from(SupabaseTables.brands)
+  //         .select()
+  //         .order('name');
+  //
+  //     return (data as List)
+  //         .cast<Map<String, dynamic>>()
+  //         .map(Brand.fromJson)
+  //         .toList();
+  //   } on PostgrestException catch (e) {
+  //     throw SupabaseServiceException(e.message, cause: e);
+  //   }
+  // }
 
   // ---------------------------------------------------------------------------
+
+  // Future<Brand?> fetchBrandByName(String name) async {
+  //   try {
+  //     final data = await client
+  //         .from(SupabaseTables.brands)
+  //         .select()
+  //         .ilike('name', name)
+  //         .maybeSingle();
+  //
+  //     if (data == null) return null;
+  //     return Brand.fromJson(data);
+  //   } on PostgrestException catch (e) {
+  //     throw SupabaseServiceException(e.message, cause: e);
+  //   }
+  // }
   // Parts & compatibility
   // ---------------------------------------------------------------------------
 
   static const _partWithCompatibilitySelect = '''
     *,
     part_compatibility (
-      *,
-      brands ( id, name )
+      *
     )
   ''';
 
@@ -412,7 +413,8 @@ class SupabaseService {
       return part.compatibilities.any((compat) {
         if (brandId != null && compat.brandId != brandId) return false;
         if (brandName != null &&
-            compat.brand?.name.toUpperCase() != brandName) {
+            compat.brand?.name.toUpperCase() != brandName &&
+            !(compat.rawText?.toUpperCase().contains(brandName) ?? false)) {
           return false;
         }
         if (model != null && compat.model != model) return false;

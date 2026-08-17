@@ -1,34 +1,35 @@
-import 'package:flutter/foundation.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../core/models/auto_part.dart';
 import '../../../core/models/cart_item.dart';
 import '../../../core/models/order_record.dart';
 import '../../../core/networking/supabase.dart';
+import 'cart_state.dart';
 
-class CartViewModel extends ChangeNotifier {
-  final List<CartItem> _items = [];
+class CartCubit extends Cubit<CartState> {
+  CartCubit() : super(const CartState());
 
-  List<CartItem> get items => List.unmodifiable(_items);
-  int get itemCount => _items.fold(0, (sum, item) => sum + item.quantity);
-  bool get isEmpty => _items.isEmpty;
-
-  bool contains(AutoPart part) => _items.any((item) => item.part.id == part.id);
+  bool contains(AutoPart part) =>
+      state.items.any((item) => item.part.id == part.id);
 
   void addPart(AutoPart part, {int quantity = 1}) {
-    final index = _items.indexWhere((item) => item.part.id == part.id);
+    final items = List<CartItem>.from(state.items);
+    final index = items.indexWhere((item) => item.part.id == part.id);
+
     if (index >= 0) {
-      _items[index] = _items[index].copyWith(
-        quantity: _items[index].quantity + quantity,
+      items[index] = items[index].copyWith(
+        quantity: items[index].quantity + quantity,
       );
     } else {
-      _items.add(CartItem(part: part, quantity: quantity));
+      items.add(CartItem(part: part, quantity: quantity));
     }
-    notifyListeners();
+
+    emit(state.copyWith(items: items));
   }
 
   void removePart(AutoPart part) {
-    _items.removeWhere((item) => item.part.id == part.id);
-    notifyListeners();
+    final items = state.items.where((item) => item.part.id != part.id).toList();
+    emit(state.copyWith(items: items));
   }
 
   void updateQuantity(AutoPart part, int quantity) {
@@ -37,21 +38,21 @@ class CartViewModel extends ChangeNotifier {
       return;
     }
 
-    final index = _items.indexWhere((item) => item.part.id == part.id);
+    final items = List<CartItem>.from(state.items);
+    final index = items.indexWhere((item) => item.part.id == part.id);
     if (index >= 0) {
-      _items[index] = _items[index].copyWith(quantity: quantity);
-      notifyListeners();
+      items[index] = items[index].copyWith(quantity: quantity);
+      emit(state.copyWith(items: items));
     }
   }
 
   void clear() {
-    _items.clear();
-    notifyListeners();
+    emit(const CartState());
   }
 
   String buildWhatsAppMessage() {
     final buffer = StringBuffer('Auto Gear order request:\n');
-    for (final item in _items) {
+    for (final item in state.items) {
       buffer.writeln(
         '- ${item.part.name} (SKU: ${item.part.sku}, OEM: ${item.part.oemNumber}) x${item.quantity}',
       );
@@ -63,7 +64,7 @@ class CartViewModel extends ChangeNotifier {
     return CreateOrderRequest(
       status: 'pending',
       whatsappMessage: buildWhatsAppMessage(),
-      items: _items
+      items: state.items
           .map(
             (item) => CreateOrderItemRequest(
               partId: item.partId,
@@ -76,7 +77,7 @@ class CartViewModel extends ChangeNotifier {
   }
 
   Future<OrderRecord> checkout() async {
-    if (_items.isEmpty) {
+    if (state.isEmpty) {
       throw SupabaseServiceException('Your cart is empty.');
     }
 

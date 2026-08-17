@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../core/data/catalog_repository.dart';
+import '../../../../core/localization/app_strings.dart';
 import '../../../../core/models/auto_part.dart';
 import '../../../../core/theme/app_theme.dart';
+import '../../../cart/cubit/cart_cubit.dart';
 import '../../../cart/view/cart_screen.dart';
-import '../../../cart/viewmodel/cart_view_model.dart';
 
 class CatalogSection extends StatelessWidget {
   const CatalogSection({
@@ -40,12 +41,15 @@ class CatalogSection extends StatelessWidget {
                 ),
               ),
               const SizedBox(width: 12),
-              Text('Parts Catalog', style: Theme.of(context).textTheme.headlineMedium),
+              Text(
+                AppStrings.tr(context, 'parts_catalog'),
+                style: Theme.of(context).textTheme.headlineMedium,
+              ),
             ],
           ),
           const SizedBox(height: 8),
           Text(
-            'Browse ${parts.length} auto parts matching your criteria',
+            AppStrings.tr(context, 'browse_count').replaceAll('{count}', parts.length.toString()),
             style: Theme.of(context).textTheme.bodyLarge,
           ),
           if (filters.hasActiveFilters) ...[
@@ -146,14 +150,14 @@ class _EmptyState extends StatelessWidget {
         children: [
           Icon(Icons.search_off, size: 64, color: AppColors.primary.withValues(alpha: 0.4)),
           const SizedBox(height: 16),
-          Text('No parts found', style: Theme.of(context).textTheme.titleLarge),
+          Text(AppStrings.tr(context, 'no_parts_found'), style: Theme.of(context).textTheme.titleLarge),
           const SizedBox(height: 8),
-          const Text(
-            'Try adjusting your filters or search terms to find what you need.',
+          Text(
+            AppStrings.tr(context, 'no_parts_sub'),
             textAlign: TextAlign.center,
           ),
           const SizedBox(height: 24),
-          OutlinedButton(onPressed: onClear, child: const Text('Clear All Filters')),
+          OutlinedButton(onPressed: onClear, child: Text(AppStrings.tr(context, 'clear_all'))),
         ],
       ),
     );
@@ -184,6 +188,14 @@ class _PartCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final inStockLabel = AppStrings.tr(context, 'in_stock');
+    final outStockLabel = AppStrings.tr(context, 'out_of_stock');
+    final skuLabel = AppStrings.tr(context, 'sku');
+    final oemLabel = AppStrings.tr(context, 'oem');
+    final vehicleLabel = AppStrings.tr(context, 'vehicle');
+    final yearsLabel = AppStrings.tr(context, 'years');
+    final addToCartLabel = AppStrings.tr(context, 'add_to_cart');
+
     return Card(
       clipBehavior: Clip.antiAlias,
       child: InkWell(
@@ -211,7 +223,7 @@ class _PartCard extends StatelessWidget {
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: Text(
-                      part.inStock ? 'In Stock' : 'Out of Stock',
+                      part.inStock ? inStockLabel : outStockLabel,
                       style: TextStyle(
                         fontSize: 11,
                         fontWeight: FontWeight.w600,
@@ -232,12 +244,12 @@ class _PartCard extends StatelessWidget {
               Text(part.description, maxLines: 2, overflow: TextOverflow.ellipsis),
               const Spacer(),
               const Divider(height: 24),
-              _InfoRow(label: 'SKU', value: part.sku),
-              _InfoRow(label: 'OEM', value: part.oemNumber),
-              _InfoRow(label: 'Vehicle', value: '${part.make} ${part.model}'),
+              _InfoRow(label: skuLabel, value: part.sku),
+              _InfoRow(label: oemLabel, value: part.oemNumber),
+              _InfoRow(label: vehicleLabel, value: '${part.make} ${part.model}'),
               _InfoRow(
-                label: 'Years',
-                value: '${part.years.first}–${part.years.last}',
+                label: yearsLabel,
+                value: part.years.isNotEmpty ? '${part.years.first}–${part.years.last}' : 'N/A',
               ),
               const SizedBox(height: 12),
               Row(
@@ -248,7 +260,7 @@ class _PartCard extends StatelessWidget {
                           ? () => _addToCart(context, part)
                           : null,
                       icon: const Icon(Icons.add_shopping_cart, size: 18),
-                      label: const Text('Add to cart'),
+                      label: Text(addToCartLabel),
                     ),
                   ),
                 ],
@@ -282,7 +294,7 @@ class _PartCard extends StatelessWidget {
   }
 
   void _addToCart(BuildContext context, AutoPart part) {
-    context.read<CartViewModel>().addPart(part);
+    context.read<CartCubit>().addPart(part);
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text('${part.name} added to cart'),
@@ -384,10 +396,10 @@ class MakesSection extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('Featured Makes', style: Theme.of(context).textTheme.headlineMedium),
+          Text(AppStrings.tr(context, 'featured_makes'), style: Theme.of(context).textTheme.headlineMedium),
           const SizedBox(height: 8),
           Text(
-            'Auto Gear provides parts for a wide range of prominent car manufacturers.',
+            AppStrings.tr(context, 'makes_sub'),
             style: Theme.of(context).textTheme.bodyLarge,
           ),
           const SizedBox(height: 32),
@@ -450,10 +462,10 @@ class SystemsSection extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('Browse By System', style: Theme.of(context).textTheme.headlineMedium),
+          Text(AppStrings.tr(context, 'browse_by_system'), style: Theme.of(context).textTheme.headlineMedium),
           const SizedBox(height: 8),
           Text(
-            'Find the exact auto parts you require across all major vehicle systems.',
+            AppStrings.tr(context, 'systems_sub'),
             style: Theme.of(context).textTheme.bodyLarge,
           ),
           const SizedBox(height: 32),

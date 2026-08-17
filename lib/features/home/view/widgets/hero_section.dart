@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../../core/data/catalog_repository.dart';
+import '../../../../core/localization/app_strings.dart';
 import '../../../../core/models/auto_part.dart';
 import '../../../../core/theme/app_theme.dart';
 
@@ -46,14 +47,14 @@ class HeroSection extends StatelessWidget {
                 borderRadius: BorderRadius.circular(20),
                 border: Border.all(color: Colors.white.withValues(alpha: 0.3)),
               ),
-              child: const Text(
-                'Making Hard-To-Find Auto Parts A Thing Of The Past',
-                style: TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w500),
+              child: Text(
+                AppStrings.tr(context, 'hero_tag'),
+                style: const TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w500),
               ),
             ),
             const SizedBox(height: 24),
             Text(
-              'Reliable Aftermarket Auto Parts\nfor Your Business Success',
+              AppStrings.tr(context, 'hero_headline'),
               style: Theme.of(context).textTheme.headlineLarge!.copyWith(
                     fontSize: isWide ? 46 : 32,
                   ),
@@ -62,8 +63,7 @@ class HeroSection extends StatelessWidget {
             SizedBox(
               width: isWide ? 640 : double.infinity,
               child: Text(
-                'Browse our comprehensive e-catalog of 40,000+ aftermarket auto parts. '
-                'Filter by make, model, year, and system to find exactly what you need.',
+                AppStrings.tr(context, 'hero_subheadline'),
                 style: TextStyle(
                   fontSize: isWide ? 18 : 16,
                   color: Colors.white.withValues(alpha: 0.9),
@@ -80,7 +80,7 @@ class HeroSection extends StatelessWidget {
             ),
             const SizedBox(height: 16),
             Text(
-              '$resultCount parts match your filters',
+              '$resultCount ${AppStrings.tr(context, 'match_count')}',
               style: TextStyle(
                 color: Colors.white.withValues(alpha: 0.85),
                 fontWeight: FontWeight.w500,
@@ -129,9 +129,9 @@ class _FilterPanel extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           TextField(
-            decoration: const InputDecoration(
-              hintText: 'Search by part name, SKU, or OEM number...',
-              prefixIcon: Icon(Icons.search, color: AppColors.primary),
+            decoration: InputDecoration(
+              hintText: AppStrings.tr(context, 'search_placeholder'),
+              prefixIcon: const Icon(Icons.search, color: AppColors.primary),
             ),
             onChanged: (value) =>
                 onFiltersChanged(filters.copyWith(searchQuery: value)),
@@ -140,10 +140,11 @@ class _FilterPanel extends StatelessWidget {
           const SizedBox(height: 20),
           Wrap(
             spacing: 12,
-            runSpacing: 12,
+            runSpacing: 16,
+            crossAxisAlignment: WrapCrossAlignment.center,
             children: [
               _FilterDropdown(
-                label: 'Select Make',
+                label: AppStrings.tr(context, 'select_make'),
                 value: filters.make,
                 items: makes,
                 width: isWide ? 180 : (width > 500 ? 160 : null),
@@ -152,7 +153,7 @@ class _FilterPanel extends StatelessWidget {
                 ),
               ),
               _FilterDropdown(
-                label: 'Select Model',
+                label: AppStrings.tr(context, 'select_model'),
                 value: filters.model,
                 items: models,
                 width: isWide ? 180 : (width > 500 ? 160 : null),
@@ -160,7 +161,7 @@ class _FilterPanel extends StatelessWidget {
                 onChanged: (v) => onFiltersChanged(filters.copyWith(model: v)),
               ),
               _FilterDropdown<int>(
-                label: 'Select Year',
+                label: AppStrings.tr(context, 'select_year'),
                 value: filters.year,
                 items: years,
                 width: isWide ? 140 : (width > 500 ? 120 : null),
@@ -168,7 +169,7 @@ class _FilterPanel extends StatelessWidget {
                 onChanged: (v) => onFiltersChanged(filters.copyWith(year: v)),
               ),
               _FilterDropdown(
-                label: 'Select System',
+                label: AppStrings.tr(context, 'select_system'),
                 value: filters.system,
                 items: systems,
                 width: isWide ? 220 : (width > 500 ? 200 : null),
@@ -177,7 +178,7 @@ class _FilterPanel extends StatelessWidget {
                 ),
               ),
               _FilterDropdown(
-                label: 'Select Part',
+                label: AppStrings.tr(context, 'select_part'),
                 value: filters.category,
                 items: categories,
                 width: isWide ? 200 : (width > 500 ? 180 : null),
@@ -194,13 +195,13 @@ class _FilterPanel extends StatelessWidget {
               ElevatedButton.icon(
                 onPressed: onSearch,
                 icon: const Icon(Icons.filter_list),
-                label: const Text('Apply Filters'),
+                label: Text(AppStrings.tr(context, 'apply_filters')),
               ),
               if (filters.hasActiveFilters)
                 OutlinedButton.icon(
                   onPressed: () => onFiltersChanged(const CatalogFilters()),
                   icon: const Icon(Icons.clear),
-                  label: const Text('Clear All'),
+                  label: Text(AppStrings.tr(context, 'clear_all')),
                 ),
             ],
           ),
@@ -234,18 +235,27 @@ class _FilterDropdown<T> extends StatelessWidget {
     final child = DropdownButtonFormField<T>(
       key: ValueKey('$label-${items.contains(value) ? value : 'none'}'),
       initialValue: items.contains(value) ? value : null,
+      isExpanded: true,
+      isDense: true,
       decoration: InputDecoration(
         labelText: label,
         labelStyle: const TextStyle(color: AppColors.textSecondary, fontSize: 13),
+        contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
       ),
-      hint: Text(label, style: const TextStyle(fontSize: 14)),
+      hint: Text(
+        label,
+        style: const TextStyle(fontSize: 14),
+        overflow: TextOverflow.ellipsis,
+        maxLines: 1,
+      ),
       items: items
           .map(
-            (item) => DropdownMenuItem(
+            (item) => DropdownMenuItem<T>(
               value: item,
               child: Text(
                 itemLabel != null ? itemLabel!(item) : item.toString(),
                 overflow: TextOverflow.ellipsis,
+                maxLines: 1,
               ),
             ),
           )
