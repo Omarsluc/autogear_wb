@@ -1,6 +1,7 @@
 import '../../../../core/localization/app_strings.dart';
 import '../../../../core/localization/locale_cubit.dart';
 import '../../../../core/theme/app_theme.dart';
+import '../../../../generated/assets.dart';
 import '../../../auth/cubit/auth_cubit.dart';
 import '../../../auth/cubit/auth_state.dart';
 import '../../../auth/view/auth_screen.dart';
@@ -53,14 +54,7 @@ class AppHeader extends StatelessWidget implements PreferredSizeWidget {
       toolbarHeight: 72,
       title: Row(
         children: [
-          Container(
-            padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(
-              color: Colors.white.withValues(alpha: 0.15),
-              borderRadius: BorderRadius.circular(10),
-            ),
-            child: const Icon(Icons.settings, color: Colors.white, size: 28),
-          ),
+          SizedBox(height: 50,width: 50,child: Image(image: AssetImage(Assets.imagesAgIcon))),
           const SizedBox(width: 12),
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
