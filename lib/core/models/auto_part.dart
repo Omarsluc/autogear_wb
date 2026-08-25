@@ -25,6 +25,9 @@ class AutoPart {
   final String description;
   final bool inStock;
 
+  String get searchHaystack =>
+      '$name $sku $oemNumber $make $model $category'.toLowerCase();
+
   bool matchesYear(int? year) {
     if (year == null) return true;
     return years.contains(year);

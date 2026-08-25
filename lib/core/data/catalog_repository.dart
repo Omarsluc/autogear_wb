@@ -554,10 +554,7 @@ List<AutoPart> filterParts(CatalogFilters filters) {
     if (filters.system != null && part.system != filters.system) return false;
     if (filters.category != null && part.category != filters.category) return false;
     if (query.isNotEmpty) {
-      final haystack =
-          '${part.name} ${part.sku} ${part.oemNumber} ${part.make} ${part.model} ${part.category}'
-              .toLowerCase();
-      if (!haystack.contains(query)) return false;
+      if (!part.searchHaystack.contains(query)) return false;
     }
     return true;
   }).toList();

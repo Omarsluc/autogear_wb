@@ -1,4 +1,3 @@
-import '../../../core/data/catalog_repository.dart';
 import '../../../core/models/auto_part.dart';
 
 class HomeState {

@@ -1,6 +1,5 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 
-import '../models/brand.dart';
 import '../models/order_record.dart';
 import '../models/part_record.dart';
 import '../models/profile.dart';

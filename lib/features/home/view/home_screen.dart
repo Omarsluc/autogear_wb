@@ -1,10 +1,12 @@
+import 'package:auto_gear_wb/features/home/view/widgets/catalog_section.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+import '../../../core/models/auto_part.dart';
+import '../../catalog/view/catalog_screen.dart';
 import '../cubit/home_cubit.dart';
 import '../cubit/home_state.dart';
 import 'widgets/app_header.dart';
-import 'widgets/catalog_section.dart';
 import 'widgets/hero_section.dart';
 import 'widgets/info_sections.dart';
 
@@ -20,17 +22,19 @@ class _HomeScreenState extends State<HomeScreen> {
   final _scrollController = ScrollController();
 
   final _heroKey = GlobalKey();
-  final _catalogKey = GlobalKey();
   final _makesKey = GlobalKey();
   final _systemsKey = GlobalKey();
   final _aboutKey = GlobalKey();
   final _contactKey = GlobalKey();
 
-  void _scrollToSection(String section) {
+  void _handleNavigation(String section) {
+    if (section == 'catalog') {
+      _openCatalog();
+      return;
+    }
+
     GlobalKey? key;
     switch (section) {
-      case 'catalog':
-        key = _catalogKey;
       case 'makes':
         key = _makesKey;
       case 'systems':
@@ -43,24 +47,46 @@ class _HomeScreenState extends State<HomeScreen> {
         key = _heroKey;
     }
 
-    final context = key.currentContext;
-    if (context != null) {
+    final targetContext = key.currentContext;
+    if (targetContext != null) {
       Scrollable.ensureVisible(
-        context,
+        targetContext,
         duration: const Duration(milliseconds: 600),
         curve: Curves.easeInOut,
       );
     }
   }
 
+  void _openCatalog([CatalogFilters? filters]) {
+    if (filters != null) {
+      context.read<HomeCubit>().updateFilters(filters);
+    }
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => CatalogScreen(initialFilters: filters),
+      ),
+    );
+  }
+
   void _selectMake(String make) {
-    context.read<HomeCubit>().selectMake(make);
-    _scrollToSection('catalog');
+    final currentFilters = context.read<HomeCubit>().state.filters;
+    final updatedFilters = currentFilters.copyWith(
+      make: make,
+      clearModel: true,
+      clearCategory: true,
+    );
+    _openCatalog(updatedFilters);
   }
 
   void _selectSystem(String system, {String? category}) {
-    context.read<HomeCubit>().selectSystem(system, category: category);
-    _scrollToSection('catalog');
+    final currentFilters = context.read<HomeCubit>().state.filters;
+    final updatedFilters = currentFilters.copyWith(
+      system: system,
+      category: category,
+      clearCategory: category == null,
+    );
+    _openCatalog(updatedFilters);
   }
 
   @override
@@ -73,69 +99,65 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget build(BuildContext context) {
     final isMobile = MediaQuery.sizeOf(context).width < 900;
 
-    return BlocBuilder<HomeCubit, HomeState>(
-      builder: (context, state) {
-        final homeCubit = context.read<HomeCubit>();
-
-        return Scaffold(
-          key: _scaffoldKey,
-          endDrawer: isMobile ? MobileDrawer(onNavigate: _scrollToSection) : null,
-          appBar: AppHeader(
-            onNavigate: _scrollToSection,
-            isMobile: isMobile,
-            drawerKey: _scaffoldKey,
-          ),
-          body: SingleChildScrollView(
-            controller: _scrollController,
-            child: Column(
-              children: [
-                KeyedSubtree(
-                  key: _heroKey,
-                  child: HeroSection(
-                    filters: state.filters,
-                    onFiltersChanged: (f) => homeCubit.updateFilters(f),
-                    onSearch: () {
-                      homeCubit.loadParts(state.filters);
-                      _scrollToSection('catalog');
-                    },
-                    resultCount: state.parts.length,
-                  ),
+    return Scaffold(
+      key: _scaffoldKey,
+      endDrawer: isMobile ? MobileDrawer(onNavigate: _handleNavigation) : null,
+      appBar: AppHeader(
+        onNavigate: _handleNavigation,
+        isMobile: isMobile,
+        drawerKey: _scaffoldKey,
+      ),
+      body: SingleChildScrollView(
+        controller: _scrollController,
+        child: Column(
+          children: [
+            KeyedSubtree(
+              key: _heroKey,
+              child: RepaintBoundary(
+                child: BlocBuilder<HomeCubit, HomeState>(
+                  builder: (context, state) {
+                    return HeroSection(
+                      filters: state.filters,
+                      onFiltersChanged: (f) => context.read<HomeCubit>().updateFilters(f),
+                      onSearch: () {
+                        _openCatalog(state.filters);
+                      },
+                      resultCount: state.parts.length,
+                    );
+                  },
                 ),
-                const StatsSection(),
-                KeyedSubtree(
-                  key: _catalogKey,
-                  child: CatalogSection(
-                    parts: state.parts,
-                    filters: state.filters,
-                    onFiltersChanged: (f) => homeCubit.updateFilters(f),
-                  ),
-                ),
-                KeyedSubtree(
-                  key: _makesKey,
-                  child: MakesSection(onMakeSelected: _selectMake),
-                ),
-                KeyedSubtree(
-                  key: _systemsKey,
-                  child: SystemsSection(
-                    onSystemSelected: _selectSystem,
-                    onCategorySelected: (system, category) =>
-                        _selectSystem(system, category: category),
-                  ),
-                ),
-                KeyedSubtree(
-                  key: _aboutKey,
-                  child: const AboutSection(),
-                ),
-                KeyedSubtree(
-                  key: _contactKey,
-                  child: const ContactSection(),
-                ),
-                const FooterSection(),
-              ],
+              ),
             ),
-          ),
-        );
-      },
+            const RepaintBoundary(child: StatsSection()),
+            const RepaintBoundary(child: PackagingSection()),
+            KeyedSubtree(
+              key: _makesKey,
+              child: RepaintBoundary(
+                child: MakesSection(onMakeSelected: _selectMake),
+              ),
+            ),
+            KeyedSubtree(
+              key: _systemsKey,
+              child: RepaintBoundary(
+                child: SystemsSection(
+                  onSystemSelected: _selectSystem,
+                  onCategorySelected: (system, category) =>
+                      _selectSystem(system, category: category),
+                ),
+              ),
+            ),
+            KeyedSubtree(
+              key: _aboutKey,
+              child: const RepaintBoundary(child: AboutSection()),
+            ),
+            KeyedSubtree(
+              key: _contactKey,
+              child: const RepaintBoundary(child: ContactSection()),
+            ),
+            const RepaintBoundary(child: FooterSection()),
+          ],
+        ),
+      ),
     );
   }
 }

@@ -222,6 +222,267 @@ class _ProcessSteps extends StatelessWidget {
   }
 }
 
+class PackagingSection extends StatelessWidget {
+  const PackagingSection({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    final width = MediaQuery.sizeOf(context).width;
+    final isWide = width > 900;
+
+    return Container(
+      color: AppColors.background,
+      padding: EdgeInsets.symmetric(horizontal: isWide ? 64 : 24, vertical: 64),
+      child: Container(
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(20),
+          boxShadow: [
+            BoxShadow(
+              color: AppColors.primary.withValues(alpha: 0.08),
+              blurRadius: 24,
+              offset: const Offset(0, 8),
+            ),
+          ],
+        ),
+        clipBehavior: Clip.antiAlias,
+        child: isWide
+            ? Row(
+                children: [
+                  Expanded(
+                    flex: 5,
+                    child: Stack(
+                      children: [
+                        Image.asset(
+                          'assets/images/packaging.jpg',
+                          height: 380,
+                          width: double.infinity,
+                          fit: BoxFit.cover,
+                          cacheHeight: 760,
+                        ),
+                        Positioned.fill(
+                          child: Container(
+                            decoration: BoxDecoration(
+                              gradient: LinearGradient(
+                                begin: Alignment.centerLeft,
+                                end: Alignment.centerRight,
+                                colors: [
+                                  Colors.transparent,
+                                  Colors.white.withValues(alpha: 0.15),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ),
+                        Positioned(
+                          top: 20,
+                          left: 20,
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+                            decoration: BoxDecoration(
+                              color: AppColors.primaryDark.withValues(alpha: 0.85),
+                              borderRadius: BorderRadius.circular(20),
+                            ),
+                            child: const Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(Icons.verified_user, color: Colors.white, size: 16),
+                                SizedBox(width: 6),
+                                Text(
+                                  'Custom Packaging & Export',
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  Expanded(
+                    flex: 6,
+                    child: Padding(
+                      padding: const EdgeInsets.all(40),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                            decoration: BoxDecoration(
+                              color: AppColors.lightBlue,
+                              borderRadius: BorderRadius.circular(6),
+                            ),
+                            child: const Text(
+                              'OEM BRANDING & PACKAGING',
+                              style: TextStyle(
+                                color: AppColors.primary,
+                                fontWeight: FontWeight.w700,
+                                fontSize: 12,
+                                letterSpacing: 1,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 16),
+                          Text(
+                            'Premium Protective Packaging',
+                            style: Theme.of(context).textTheme.headlineSmall,
+                          ),
+                          const SizedBox(height: 12),
+                          const Text(
+                            'Every order is packaged to international export standards with customized '
+                            'branding options, heavy-duty anti-corrosion protection, and reinforced boxes '
+                            'ensuring zero-damage delivery across 120+ countries.',
+                            style: TextStyle(
+                              color: AppColors.textSecondary,
+                              height: 1.6,
+                              fontSize: 15,
+                            ),
+                          ),
+                          const SizedBox(height: 24),
+                          const Row(
+                            children: [
+                              _PackagingFeatureBadge(icon: Icons.shield_outlined, label: 'Damage-Proof'),
+                              SizedBox(width: 16),
+                              _PackagingFeatureBadge(icon: Icons.branding_watermark_outlined, label: 'Custom Branding'),
+                              SizedBox(width: 16),
+                              _PackagingFeatureBadge(icon: Icons.local_shipping_outlined, label: 'Global Dispatch'),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+              )
+            : Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Stack(
+                    children: [
+                      Image.asset(
+                        'assets/images/packaging.jpg',
+                        height: 240,
+                        width: double.infinity,
+                        fit: BoxFit.cover,
+                        cacheHeight: 480,
+                      ),
+                      Positioned(
+                        top: 16,
+                        left: 16,
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                          decoration: BoxDecoration(
+                            color: AppColors.primaryDark.withValues(alpha: 0.85),
+                            borderRadius: BorderRadius.circular(20),
+                          ),
+                          child: const Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(Icons.verified_user, color: Colors.white, size: 14),
+                              SizedBox(width: 6),
+                              Text(
+                                'Custom Packaging & Export',
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.all(24),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: AppColors.lightBlue,
+                            borderRadius: BorderRadius.circular(6),
+                          ),
+                          child: const Text(
+                            'OEM BRANDING & PACKAGING',
+                            style: TextStyle(
+                              color: AppColors.primary,
+                              fontWeight: FontWeight.w700,
+                              fontSize: 11,
+                              letterSpacing: 1,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+                        Text(
+                          'Premium Protective Packaging',
+                          style: Theme.of(context).textTheme.titleLarge,
+                        ),
+                        const SizedBox(height: 8),
+                        const Text(
+                          'Every order is packaged to international export standards with customized '
+                          'branding options, heavy-duty protection, and reinforced boxes.',
+                          style: TextStyle(
+                            color: AppColors.textSecondary,
+                            height: 1.5,
+                            fontSize: 14,
+                          ),
+                        ),
+                        const SizedBox(height: 20),
+                        const Wrap(
+                          spacing: 12,
+                          runSpacing: 8,
+                          children: [
+                            _PackagingFeatureBadge(icon: Icons.shield_outlined, label: 'Damage-Proof'),
+                            _PackagingFeatureBadge(icon: Icons.branding_watermark_outlined, label: 'Custom Branding'),
+                            _PackagingFeatureBadge(icon: Icons.local_shipping_outlined, label: 'Global Dispatch'),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+      ),
+    );
+  }
+}
+
+class _PackagingFeatureBadge extends StatelessWidget {
+  const _PackagingFeatureBadge({
+    required this.icon,
+    required this.label,
+  });
+
+  final IconData icon;
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Icon(icon, color: AppColors.primary, size: 18),
+        const SizedBox(width: 6),
+        Text(
+          label,
+          style: const TextStyle(
+            color: AppColors.textPrimary,
+            fontWeight: FontWeight.w600,
+            fontSize: 13,
+          ),
+        ),
+      ],
+    );
+  }
+}
+
 class ContactSection extends StatefulWidget {
   const ContactSection({super.key});
 

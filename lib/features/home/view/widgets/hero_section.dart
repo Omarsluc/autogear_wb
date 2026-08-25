@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import '../../../../core/data/catalog_repository.dart';
 import '../../../../core/localization/app_strings.dart';
@@ -23,77 +24,101 @@ class HeroSection extends StatelessWidget {
     final width = MediaQuery.sizeOf(context).width;
     final isWide = width > 900;
 
-    return Container(
-      width: double.infinity,
-      decoration: const BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [AppColors.primaryDark, AppColors.primary, AppColors.primaryLight],
-        ),
-      ),
-      child: Padding(
-        padding: EdgeInsets.symmetric(
-          horizontal: isWide ? 64 : 24,
-          vertical: isWide ? 72 : 48,
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
-              decoration: BoxDecoration(
-                color: Colors.white.withValues(alpha: 0.15),
-                borderRadius: BorderRadius.circular(20),
-                border: Border.all(color: Colors.white.withValues(alpha: 0.3)),
-              ),
-              child: Text(
-                AppStrings.tr(context, 'hero_tag'),
-                style: const TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w500),
-              ),
-            ),
-            const SizedBox(height: 24),
-            Text(
-              AppStrings.tr(context, 'hero_headline'),
-              style: Theme.of(context).textTheme.headlineLarge!.copyWith(
-                    fontSize: isWide ? 46 : 32,
-                  ),
-            ),
-            const SizedBox(height: 16),
-            SizedBox(
-              width: isWide ? 640 : double.infinity,
-              child: Text(
-                AppStrings.tr(context, 'hero_subheadline'),
-                style: TextStyle(
-                  fontSize: isWide ? 18 : 16,
-                  color: Colors.white.withValues(alpha: 0.9),
-                  height: 1.6,
+    return Stack(
+      children: [
+        Positioned.fill(
+          child: Container(
+            decoration: BoxDecoration(
+              image: DecorationImage(
+                image: const AssetImage('assets/images/hero.jpg'),
+                fit: BoxFit.cover,
+                colorFilter: ColorFilter.mode(
+                  Colors.black.withValues(alpha: 0.35),
+                  BlendMode.darken,
                 ),
               ),
             ),
-            const SizedBox(height: 40),
-            _FilterPanel(
-              filters: filters,
-              onFiltersChanged: onFiltersChanged,
-              onSearch: onSearch,
-              isWide: isWide,
-            ),
-            const SizedBox(height: 16),
-            Text(
-              '$resultCount ${AppStrings.tr(context, 'match_count')}',
-              style: TextStyle(
-                color: Colors.white.withValues(alpha: 0.85),
-                fontWeight: FontWeight.w500,
+            child: Container(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [
+                    AppColors.primaryDark.withValues(alpha: 0.85),
+                    AppColors.primary.withValues(alpha: 0.75),
+                    AppColors.primaryDark.withValues(alpha: 0.90),
+                  ],
+                ),
               ),
             ),
-          ],
+          ),
         ),
-      ),
+        SizedBox(
+          width: double.infinity,
+          child: Padding(
+            padding: EdgeInsets.symmetric(
+              horizontal: isWide ? 64 : 24,
+              vertical: isWide ? 72 : 48,
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.15),
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(color: Colors.white.withValues(alpha: 0.3)),
+                  ),
+                  child: Text(
+                    AppStrings.tr(context, 'hero_tag'),
+                    style: const TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w500),
+                  ),
+                ),
+                const SizedBox(height: 24),
+                Text(
+                  AppStrings.tr(context, 'hero_headline'),
+                  style: Theme.of(context).textTheme.headlineLarge!.copyWith(
+                        fontSize: isWide ? 46 : 32,
+                      ),
+                ),
+                const SizedBox(height: 16),
+                SizedBox(
+                  width: isWide ? 640 : double.infinity,
+                  child: Text(
+                    AppStrings.tr(context, 'hero_subheadline'),
+                    style: TextStyle(
+                      fontSize: isWide ? 18 : 16,
+                      color: Colors.white.withValues(alpha: 0.9),
+                      height: 1.6,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 40),
+                _FilterPanel(
+                  filters: filters,
+                  onFiltersChanged: onFiltersChanged,
+                  onSearch: onSearch,
+                  isWide: isWide,
+                ),
+                const SizedBox(height: 16),
+                Text(
+                  '$resultCount ${AppStrings.tr(context, 'match_count')}',
+                  style: TextStyle(
+                    color: Colors.white.withValues(alpha: 0.85),
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ],
     );
   }
 }
 
-class _FilterPanel extends StatelessWidget {
+class _FilterPanel extends StatefulWidget {
   const _FilterPanel({
     required this.filters,
     required this.onFiltersChanged,
@@ -107,10 +132,46 @@ class _FilterPanel extends StatelessWidget {
   final bool isWide;
 
   @override
+  State<_FilterPanel> createState() => _FilterPanelState();
+}
+
+class _FilterPanelState extends State<_FilterPanel> {
+  late final TextEditingController _controller;
+  Timer? _debounceTimer;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = TextEditingController(text: widget.filters.searchQuery);
+  }
+
+  @override
+  void didUpdateWidget(covariant _FilterPanel oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.filters.searchQuery != _controller.text && _debounceTimer?.isActive != true) {
+      _controller.text = widget.filters.searchQuery;
+    }
+  }
+
+  void _onSearchChanged(String value) {
+    _debounceTimer?.cancel();
+    _debounceTimer = Timer(const Duration(milliseconds: 200), () {
+      widget.onFiltersChanged(widget.filters.copyWith(searchQuery: value));
+    });
+  }
+
+  @override
+  void dispose() {
+    _debounceTimer?.cancel();
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     final width = MediaQuery.sizeOf(context).width;
-    final models = availableModels(filters.make);
-    final categories = availableCategories(filters.system);
+    final models = availableModels(widget.filters.make);
+    final categories = availableCategories(widget.filters.system);
 
     return Container(
       padding: const EdgeInsets.all(24),
@@ -129,13 +190,17 @@ class _FilterPanel extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           TextField(
+            controller: _controller,
             decoration: InputDecoration(
               hintText: AppStrings.tr(context, 'search_placeholder'),
               prefixIcon: const Icon(Icons.search, color: AppColors.primary),
             ),
-            onChanged: (value) =>
-                onFiltersChanged(filters.copyWith(searchQuery: value)),
-            onSubmitted: (_) => onSearch(),
+            onChanged: _onSearchChanged,
+            onSubmitted: (_) {
+              _debounceTimer?.cancel();
+              widget.onFiltersChanged(widget.filters.copyWith(searchQuery: _controller.text));
+              widget.onSearch();
+            },
           ),
           const SizedBox(height: 20),
           Wrap(
@@ -145,45 +210,45 @@ class _FilterPanel extends StatelessWidget {
             children: [
               _FilterDropdown(
                 label: AppStrings.tr(context, 'select_make'),
-                value: filters.make,
+                value: widget.filters.make,
                 items: makes,
-                width: isWide ? 180 : (width > 500 ? 160 : null),
-                onChanged: (v) => onFiltersChanged(
-                  filters.copyWith(make: v, clearModel: true, clearCategory: true),
+                width: widget.isWide ? 180 : (width > 500 ? 160 : null),
+                onChanged: (v) => widget.onFiltersChanged(
+                  widget.filters.copyWith(make: v, clearModel: true, clearCategory: true),
                 ),
               ),
               _FilterDropdown(
                 label: AppStrings.tr(context, 'select_model'),
-                value: filters.model,
+                value: widget.filters.model,
                 items: models,
-                width: isWide ? 180 : (width > 500 ? 160 : null),
-                enabled: filters.make != null,
-                onChanged: (v) => onFiltersChanged(filters.copyWith(model: v)),
+                width: widget.isWide ? 180 : (width > 500 ? 160 : null),
+                enabled: widget.filters.make != null,
+                onChanged: (v) => widget.onFiltersChanged(widget.filters.copyWith(model: v)),
               ),
               _FilterDropdown<int>(
                 label: AppStrings.tr(context, 'select_year'),
-                value: filters.year,
+                value: widget.filters.year,
                 items: years,
-                width: isWide ? 140 : (width > 500 ? 120 : null),
+                width: widget.isWide ? 140 : (width > 500 ? 120 : null),
                 itemLabel: (y) => y.toString(),
-                onChanged: (v) => onFiltersChanged(filters.copyWith(year: v)),
+                onChanged: (v) => widget.onFiltersChanged(widget.filters.copyWith(year: v)),
               ),
               _FilterDropdown(
                 label: AppStrings.tr(context, 'select_system'),
-                value: filters.system,
+                value: widget.filters.system,
                 items: systems,
-                width: isWide ? 220 : (width > 500 ? 200 : null),
-                onChanged: (v) => onFiltersChanged(
-                  filters.copyWith(system: v, clearCategory: true),
+                width: widget.isWide ? 220 : (width > 500 ? 200 : null),
+                onChanged: (v) => widget.onFiltersChanged(
+                  widget.filters.copyWith(system: v, clearCategory: true),
                 ),
               ),
               _FilterDropdown(
                 label: AppStrings.tr(context, 'select_part'),
-                value: filters.category,
+                value: widget.filters.category,
                 items: categories,
-                width: isWide ? 200 : (width > 500 ? 180 : null),
-                enabled: filters.system != null,
-                onChanged: (v) => onFiltersChanged(filters.copyWith(category: v)),
+                width: widget.isWide ? 200 : (width > 500 ? 180 : null),
+                enabled: widget.filters.system != null,
+                onChanged: (v) => widget.onFiltersChanged(widget.filters.copyWith(category: v)),
               ),
             ],
           ),
@@ -193,13 +258,21 @@ class _FilterPanel extends StatelessWidget {
             runSpacing: 12,
             children: [
               ElevatedButton.icon(
-                onPressed: onSearch,
+                onPressed: () {
+                  _debounceTimer?.cancel();
+                  widget.onFiltersChanged(widget.filters.copyWith(searchQuery: _controller.text));
+                  widget.onSearch();
+                },
                 icon: const Icon(Icons.filter_list),
                 label: Text(AppStrings.tr(context, 'apply_filters')),
               ),
-              if (filters.hasActiveFilters)
+              if (widget.filters.hasActiveFilters)
                 OutlinedButton.icon(
-                  onPressed: () => onFiltersChanged(const CatalogFilters()),
+                  onPressed: () {
+                    _debounceTimer?.cancel();
+                    _controller.clear();
+                    widget.onFiltersChanged(const CatalogFilters());
+                  },
                   icon: const Icon(Icons.clear),
                   label: Text(AppStrings.tr(context, 'clear_all')),
                 ),
