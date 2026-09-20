@@ -20,7 +20,13 @@ class AppAuthState {
     final metadata = user?.userMetadata;
     final name = metadata?['full_name'] as String?;
     if (name != null && name.isNotEmpty) return name;
-    return user?.email;
+    final phone = metadata?['phone'] as String?;
+    if (phone != null && phone.isNotEmpty) return phone;
+    final email = user?.email;
+    if (email != null && email.contains('@')) {
+      return email.split('@').first;
+    }
+    return 'User';
   }
 
   AppAuthState copyWith({

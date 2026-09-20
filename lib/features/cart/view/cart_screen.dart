@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../../../core/models/cart_item.dart';
 import '../../../core/networking/supabase.dart';
@@ -21,6 +22,22 @@ class CartScreen extends StatefulWidget {
 class _CartScreenState extends State<CartScreen> {
   bool _isCheckingOut = false;
 
+  Future<void> _sendToWhatsApp(String message) async {
+    const phoneNumber = '201122291859';
+    final whatsappUrl = Uri.parse(
+      'https://wa.me/$phoneNumber?text=${Uri.encodeComponent(message)}',
+    );
+    try {
+      if (await canLaunchUrl(whatsappUrl)) {
+        await launchUrl(whatsappUrl, mode: LaunchMode.externalApplication);
+      } else {
+        await launchUrl(whatsappUrl);
+      }
+    } catch (e) {
+      debugPrint('Error launching WhatsApp: $e');
+    }
+  }
+
   Future<void> _checkout() async {
     final authState = context.read<AuthCubit>().state;
     final cartCubit = context.read<CartCubit>();
@@ -41,6 +58,11 @@ class _CartScreenState extends State<CartScreen> {
     setState(() => _isCheckingOut = true);
 
     try {
+      final whatsappMessage = cartCubit.buildWhatsAppMessage();
+      
+      // Automatically send cart content quantity and SN numbers to WhatsApp (+201122291859)
+      await _sendToWhatsApp(whatsappMessage);
+
       final order = await cartCubit.checkout();
 
       if (!mounted) return;
@@ -52,9 +74,14 @@ class _CartScreenState extends State<CartScreen> {
           title: const Text('Order submitted'),
           content: Text(
             'Your quote request #${order.id} was sent successfully. '
-            'Our team will contact you shortly.',
+            'WhatsApp was launched with your order items (Quantity & SN numbers) to +201122291859.',
           ),
           actions: [
+            TextButton.icon(
+              onPressed: () => _sendToWhatsApp(order.whatsappMessage ?? whatsappMessage),
+              icon: const Icon(Icons.chat),
+              label: const Text('WhatsApp'),
+            ),
             TextButton(
               onPressed: () {
                 Navigator.pop(ctx);
@@ -79,6 +106,11 @@ class _CartScreenState extends State<CartScreen> {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(e.message)),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error during checkout: $e')),
       );
     } finally {
       if (mounted) {

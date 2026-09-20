@@ -23,10 +23,9 @@ class AuthScreen extends StatefulWidget {
 
 class _AuthScreenState extends State<AuthScreen> {
   final _formKey = GlobalKey<FormState>();
-  final _emailController = TextEditingController();
+  final _phoneController = TextEditingController();
   final _passwordController = TextEditingController();
   final _nameController = TextEditingController();
-  final _phoneController = TextEditingController();
 
   late AuthScreenMode _mode;
   bool _obscurePassword = true;
@@ -39,10 +38,9 @@ class _AuthScreenState extends State<AuthScreen> {
 
   @override
   void dispose() {
-    _emailController.dispose();
+    _phoneController.dispose();
     _passwordController.dispose();
     _nameController.dispose();
-    _phoneController.dispose();
     super.dispose();
   }
 
@@ -54,18 +52,15 @@ class _AuthScreenState extends State<AuthScreen> {
 
     final success = _mode == AuthScreenMode.signIn
         ? await authCubit.signIn(
-            email: _emailController.text.trim(),
+            phone: _phoneController.text.trim(),
             password: _passwordController.text,
           )
         : await authCubit.signUp(
-            email: _emailController.text.trim(),
+            phone: _phoneController.text.trim(),
             password: _passwordController.text,
             fullName: _nameController.text.trim().isEmpty
                 ? null
                 : _nameController.text.trim(),
-            phone: _phoneController.text.trim().isEmpty
-                ? null
-                : _phoneController.text.trim(),
           );
 
     if (!mounted || !success) return;
@@ -111,7 +106,7 @@ class _AuthScreenState extends State<AuthScreen> {
                       Text(
                         widget.checkoutFlow
                             ? 'Sign in or create an account to submit your order.'
-                            : 'Use email and password to access your account.',
+                            : 'Use phone number and password to access your account.',
                         textAlign: TextAlign.center,
                       ),
                       const SizedBox(height: 24),
@@ -135,33 +130,29 @@ class _AuthScreenState extends State<AuthScreen> {
                             prefixIcon: Icon(Icons.person_outline),
                           ),
                           textInputAction: TextInputAction.next,
-                        ),
-                        const SizedBox(height: 16),
-                        TextFormField(
-                          controller: _phoneController,
-                          decoration: const InputDecoration(
-                            labelText: 'Phone (optional)',
-                            prefixIcon: Icon(Icons.phone_outlined),
-                          ),
-                          keyboardType: TextInputType.phone,
-                          textInputAction: TextInputAction.next,
+                          validator: (value) {
+                            if (value == null || value.trim().isEmpty) {
+                              return 'Full name is required';
+                            }
+                            return null;
+                          },
                         ),
                         const SizedBox(height: 16),
                       ],
                       TextFormField(
-                        controller: _emailController,
+                        controller: _phoneController,
                         decoration: const InputDecoration(
-                          labelText: 'Email',
-                          prefixIcon: Icon(Icons.email_outlined),
+                          labelText: 'Phone number',
+                          prefixIcon: Icon(Icons.phone_outlined),
                         ),
-                        keyboardType: TextInputType.emailAddress,
+                        keyboardType: TextInputType.phone,
                         textInputAction: TextInputAction.next,
                         validator: (value) {
                           if (value == null || value.trim().isEmpty) {
-                            return 'Email is required';
+                            return 'Phone number is required';
                           }
-                          if (!value.contains('@')) {
-                            return 'Enter a valid email';
+                          if (value.trim().length < 6) {
+                            return 'Enter a valid phone number';
                           }
                           return null;
                         },

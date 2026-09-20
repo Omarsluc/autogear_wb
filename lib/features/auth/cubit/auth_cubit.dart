@@ -32,24 +32,22 @@ class AuthCubit extends Cubit<AppAuthState> {
   }
 
   Future<bool> signIn({
-    required String email,
+    required String phone,
     required String password,
   }) async {
-    return _runAuth(() => _service.signIn(email: email, password: password));
+    return _runAuth(() => _service.signIn(phone: phone, password: password));
   }
 
   Future<bool> signUp({
-    required String email,
+    required String phone,
     required String password,
     String? fullName,
-    String? phone,
   }) async {
     return _runAuth(
       () => _service.signUp(
-        email: email,
+        phone: phone,
         password: password,
         fullName: fullName,
-        phone: phone,
       ),
     );
   }

@@ -11,6 +11,12 @@ class AutoPart {
     required this.category,
     required this.description,
     this.inStock = true,
+    this.pictureUrl,
+    this.retailPrice,
+    this.wholesalePrice,
+    this.country,
+    this.compatNotesAr,
+    this.englishNotes,
   });
 
   final String id;
@@ -24,9 +30,15 @@ class AutoPart {
   final String category;
   final String description;
   final bool inStock;
+  final String? pictureUrl;
+  final double? retailPrice;
+  final double? wholesalePrice;
+  final String? country;
+  final String? compatNotesAr;
+  final String? englishNotes;
 
   String get searchHaystack =>
-      '$name $sku $oemNumber $make $model $category'.toLowerCase();
+      '$name $sku $oemNumber $make $model $category $system ${compatNotesAr ?? ''} ${englishNotes ?? ''}'.toLowerCase();
 
   bool matchesYear(int? year) {
     if (year == null) return true;

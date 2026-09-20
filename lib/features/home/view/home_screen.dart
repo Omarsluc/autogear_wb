@@ -1,4 +1,4 @@
-import 'package:auto_gear_wb/features/home/view/widgets/catalog_section.dart';
+import 'widgets/catalog_section.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 

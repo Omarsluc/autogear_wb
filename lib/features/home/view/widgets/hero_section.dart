@@ -1,9 +1,12 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../core/data/catalog_repository.dart';
 import '../../../../core/localization/app_strings.dart';
 import '../../../../core/models/auto_part.dart';
 import '../../../../core/theme/app_theme.dart';
+import '../../cubit/home_cubit.dart';
+import '../../cubit/home_state.dart';
 
 class HeroSection extends StatelessWidget {
   const HeroSection({
@@ -170,116 +173,126 @@ class _FilterPanelState extends State<_FilterPanel> {
   @override
   Widget build(BuildContext context) {
     final width = MediaQuery.sizeOf(context).width;
-    final models = availableModels(widget.filters.make);
-    final categories = availableCategories(widget.filters.system);
 
-    return Container(
-      padding: const EdgeInsets.all(24),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: AppColors.primaryDark.withValues(alpha: 0.2),
-            blurRadius: 24,
-            offset: const Offset(0, 8),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          TextField(
-            controller: _controller,
-            decoration: InputDecoration(
-              hintText: AppStrings.tr(context, 'search_placeholder'),
-              prefixIcon: const Icon(Icons.search, color: AppColors.primary),
-            ),
-            onChanged: _onSearchChanged,
-            onSubmitted: (_) {
-              _debounceTimer?.cancel();
-              widget.onFiltersChanged(widget.filters.copyWith(searchQuery: _controller.text));
-              widget.onSearch();
-            },
-          ),
-          const SizedBox(height: 20),
-          Wrap(
-            spacing: 12,
-            runSpacing: 16,
-            crossAxisAlignment: WrapCrossAlignment.center,
-            children: [
-              _FilterDropdown(
-                label: AppStrings.tr(context, 'select_make'),
-                value: widget.filters.make,
-                items: makes,
-                width: widget.isWide ? 180 : (width > 500 ? 160 : null),
-                onChanged: (v) => widget.onFiltersChanged(
-                  widget.filters.copyWith(make: v, clearModel: true, clearCategory: true),
-                ),
-              ),
-              _FilterDropdown(
-                label: AppStrings.tr(context, 'select_model'),
-                value: widget.filters.model,
-                items: models,
-                width: widget.isWide ? 180 : (width > 500 ? 160 : null),
-                enabled: widget.filters.make != null,
-                onChanged: (v) => widget.onFiltersChanged(widget.filters.copyWith(model: v)),
-              ),
-              _FilterDropdown<int>(
-                label: AppStrings.tr(context, 'select_year'),
-                value: widget.filters.year,
-                items: years,
-                width: widget.isWide ? 140 : (width > 500 ? 120 : null),
-                itemLabel: (y) => y.toString(),
-                onChanged: (v) => widget.onFiltersChanged(widget.filters.copyWith(year: v)),
-              ),
-              _FilterDropdown(
-                label: AppStrings.tr(context, 'select_system'),
-                value: widget.filters.system,
-                items: systems,
-                width: widget.isWide ? 220 : (width > 500 ? 200 : null),
-                onChanged: (v) => widget.onFiltersChanged(
-                  widget.filters.copyWith(system: v, clearCategory: true),
-                ),
-              ),
-              _FilterDropdown(
-                label: AppStrings.tr(context, 'select_part'),
-                value: widget.filters.category,
-                items: categories,
-                width: widget.isWide ? 200 : (width > 500 ? 180 : null),
-                enabled: widget.filters.system != null,
-                onChanged: (v) => widget.onFiltersChanged(widget.filters.copyWith(category: v)),
+    return BlocBuilder<HomeCubit, HomeState>(
+      builder: (context, state) {
+        final makesList = state.availableMakes.isNotEmpty ? state.availableMakes : makes;
+        final modelsList = state.availableModels.isNotEmpty
+            ? state.availableModels
+            : availableModels(widget.filters.make);
+        final yearsList = state.availableYears.isNotEmpty ? state.availableYears : years;
+        final systemsList = state.availableSystems.isNotEmpty ? state.availableSystems : systems;
+        final partNamesList = state.availablePartNames.isNotEmpty
+            ? state.availablePartNames
+            : availableCategories(widget.filters.system);
+
+        return Container(
+          padding: const EdgeInsets.all(24),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(16),
+            boxShadow: [
+              BoxShadow(
+                color: AppColors.primaryDark.withValues(alpha: 0.2),
+                blurRadius: 24,
+                offset: const Offset(0, 8),
               ),
             ],
           ),
-          const SizedBox(height: 20),
-          Wrap(
-            spacing: 12,
-            runSpacing: 12,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              ElevatedButton.icon(
-                onPressed: () {
+              TextField(
+                controller: _controller,
+                decoration: InputDecoration(
+                  hintText: AppStrings.tr(context, 'search_placeholder'),
+                  prefixIcon: const Icon(Icons.search, color: AppColors.primary),
+                ),
+                onChanged: _onSearchChanged,
+                onSubmitted: (_) {
                   _debounceTimer?.cancel();
                   widget.onFiltersChanged(widget.filters.copyWith(searchQuery: _controller.text));
                   widget.onSearch();
                 },
-                icon: const Icon(Icons.filter_list),
-                label: Text(AppStrings.tr(context, 'apply_filters')),
               ),
-              if (widget.filters.hasActiveFilters)
-                OutlinedButton.icon(
-                  onPressed: () {
-                    _debounceTimer?.cancel();
-                    _controller.clear();
-                    widget.onFiltersChanged(const CatalogFilters());
-                  },
-                  icon: const Icon(Icons.clear),
-                  label: Text(AppStrings.tr(context, 'clear_all')),
-                ),
+              const SizedBox(height: 20),
+              Wrap(
+                spacing: 12,
+                runSpacing: 16,
+                crossAxisAlignment: WrapCrossAlignment.center,
+                children: [
+                  _FilterDropdown(
+                    label: AppStrings.tr(context, 'select_make'),
+                    value: widget.filters.make,
+                    items: makesList,
+                    width: widget.isWide ? 180 : (width > 500 ? 160 : null),
+                    onChanged: (v) => widget.onFiltersChanged(
+                      widget.filters.copyWith(make: v, clearModel: true, clearCategory: true),
+                    ),
+                  ),
+                  _FilterDropdown(
+                    label: AppStrings.tr(context, 'select_model'),
+                    value: widget.filters.model,
+                    items: modelsList,
+                    width: widget.isWide ? 180 : (width > 500 ? 160 : null),
+                    onChanged: (v) => widget.onFiltersChanged(widget.filters.copyWith(model: v)),
+                  ),
+                  _FilterDropdown<int>(
+                    label: AppStrings.tr(context, 'select_year'),
+                    value: widget.filters.year,
+                    items: yearsList,
+                    width: widget.isWide ? 140 : (width > 500 ? 120 : null),
+                    itemLabel: (y) => y.toString(),
+                    onChanged: (v) => widget.onFiltersChanged(widget.filters.copyWith(year: v)),
+                  ),
+                  _FilterDropdown(
+                    label: AppStrings.tr(context, 'select_system'),
+                    value: widget.filters.system,
+                    items: systemsList,
+                    width: widget.isWide ? 220 : (width > 500 ? 200 : null),
+                    onChanged: (v) => widget.onFiltersChanged(
+                      widget.filters.copyWith(system: v, clearCategory: true),
+                    ),
+                  ),
+                  _FilterDropdown(
+                    label: AppStrings.tr(context, 'select_part'),
+                    value: widget.filters.category,
+                    items: partNamesList,
+                    width: widget.isWide ? 200 : (width > 500 ? 180 : null),
+                    onChanged: (v) => widget.onFiltersChanged(widget.filters.copyWith(category: v)),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 20),
+              Wrap(
+                spacing: 12,
+                runSpacing: 12,
+                children: [
+                  ElevatedButton.icon(
+                    onPressed: () {
+                      _debounceTimer?.cancel();
+                      widget.onFiltersChanged(widget.filters.copyWith(searchQuery: _controller.text));
+                      widget.onSearch();
+                    },
+                    icon: const Icon(Icons.filter_list),
+                    label: Text(AppStrings.tr(context, 'apply_filters')),
+                  ),
+                  if (widget.filters.hasActiveFilters)
+                    OutlinedButton.icon(
+                      onPressed: () {
+                        _debounceTimer?.cancel();
+                        _controller.clear();
+                        widget.onFiltersChanged(const CatalogFilters());
+                      },
+                      icon: const Icon(Icons.clear),
+                      label: Text(AppStrings.tr(context, 'clear_all')),
+                    ),
+                ],
+              ),
             ],
           ),
-        ],
-      ),
+        );
+      },
     );
   }
 }

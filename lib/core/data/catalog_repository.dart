@@ -1,4 +1,5 @@
 import '../models/auto_part.dart';
+import '../networking/supabase.dart';
 
 const makes = [
   'TOYOTA',
@@ -572,4 +573,93 @@ List<String> availableCategories(String? system) {
 
 List<String> availableCategoriesForParts(List<AutoPart> parts) {
   return parts.map((p) => p.category).toSet().toList()..sort();
+}
+
+/// Central catalog repository for querying the Supabase `parts` table
+/// with fallback to local parts data.
+class CatalogRepository {
+  const CatalogRepository();
+
+  Future<List<AutoPart>> fetchParts([CatalogFilters filters = const CatalogFilters()]) async {
+    if (SupabaseService.isInitialized) {
+      try {
+        final records = await SupabaseService.instance.searchParts(
+          make: filters.make,
+          model: filters.model,
+          year: filters.year,
+          system: filters.system,
+          partName: filters.category,
+          searchQuery: filters.searchQuery,
+        );
+        if (records.isNotEmpty) {
+          return records.map((r) => r.toAutoPart()).toList();
+        }
+      } catch (_) {}
+    }
+    return filterParts(filters);
+  }
+
+  Future<List<String>> fetchMakes() async {
+    if (SupabaseService.isInitialized) {
+      try {
+        final supaMakes = await SupabaseService.instance.fetchMakes();
+        if (supaMakes.isNotEmpty) return supaMakes;
+      } catch (_) {}
+    }
+    return makes;
+  }
+
+  Future<List<String>> fetchModels(String? make) async {
+    if (SupabaseService.isInitialized) {
+      try {
+        final supaModels = await SupabaseService.instance.fetchModels(make: make);
+        if (supaModels.isNotEmpty) return supaModels;
+      } catch (_) {}
+    }
+    return availableModels(make);
+  }
+
+  Future<List<int>> fetchYears({String? make, String? model}) async {
+    if (SupabaseService.isInitialized) {
+      try {
+        final supaYears = await SupabaseService.instance.fetchYears(make: make, model: model);
+        if (supaYears.isNotEmpty) return supaYears;
+      } catch (_) {}
+    }
+    return years;
+  }
+
+  Future<List<String>> fetchSystems({String? make, String? model, int? year}) async {
+    if (SupabaseService.isInitialized) {
+      try {
+        final supaSystems = await SupabaseService.instance.fetchSystems(
+          make: make,
+          model: model,
+          year: year,
+        );
+        if (supaSystems.isNotEmpty) return supaSystems;
+      } catch (_) {}
+    }
+    return systems;
+  }
+
+  Future<List<String>> fetchPartNames({
+    String? make,
+    String? model,
+    int? year,
+    String? system,
+  }) async {
+    if (SupabaseService.isInitialized) {
+      try {
+        final supaPartNames = await SupabaseService.instance.fetchPartNames(
+          make: make,
+          model: model,
+          year: year,
+          system: system,
+        );
+        if (supaPartNames.isNotEmpty) return supaPartNames;
+      } catch (_) {}
+    }
+    return availableCategories(system);
+  }
 }

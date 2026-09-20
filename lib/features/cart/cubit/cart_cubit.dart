@@ -51,11 +51,16 @@ class CartCubit extends Cubit<CartState> {
   }
 
   String buildWhatsAppMessage() {
-    final buffer = StringBuffer('Auto Gear order request:\n');
-    for (final item in state.items) {
-      buffer.writeln(
-        '- ${item.part.name} (SKU: ${item.part.sku}, OEM: ${item.part.oemNumber}) x${item.quantity}',
-      );
+    final buffer = StringBuffer('Auto Gear Order Request:\n\n');
+    for (var i = 0; i < state.items.length; i++) {
+      final item = state.items[i];
+      buffer.writeln('${i + 1}. Part Name: ${item.part.name}');
+      buffer.writeln('   SN Number: ${item.part.sku}');
+      if (item.part.oemNumber.isNotEmpty) {
+        buffer.writeln('   OEM: ${item.part.oemNumber}');
+      }
+      buffer.writeln('   Quantity: ${item.quantity}');
+      buffer.writeln();
     }
     return buffer.toString().trim();
   }

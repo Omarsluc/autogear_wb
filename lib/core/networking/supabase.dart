@@ -142,19 +142,30 @@ class SupabaseService {
   // Auth
   // ---------------------------------------------------------------------------
 
+  static String _cleanPhone(String phone) {
+    return phone.replaceAll(RegExp(r'\s+|-'), '');
+  }
+
+  static String _phoneToEmail(String phone) {
+    final clean = _cleanPhone(phone);
+    return '$clean@phone.autogear.com';
+  }
+
   Future<User> signUp({
-    required String email,
+    required String phone,
     required String password,
     String? fullName,
-    String? phone,
   }) async {
+    final clean = _cleanPhone(phone);
+    final syntheticEmail = _phoneToEmail(clean);
+
     try {
       final response = await auth.signUp(
-        email: email,
+        email: syntheticEmail,
         password: password,
         data: {
+          'phone': clean,
           if (fullName != null) 'full_name': fullName,
-          if (phone != null) 'phone': phone,
         },
       );
 
@@ -163,13 +174,18 @@ class SupabaseService {
         throw SupabaseServiceException('Sign up failed: no user returned.');
       }
 
-      await upsertProfile(
-        Profile(
-          id: user.id,
-          fullName: fullName,
-          phone: phone,
-        ),
-      );
+      // Try updating/upserting profile details.
+      try {
+        await upsertProfile(
+          Profile(
+            id: user.id,
+            fullName: fullName,
+            phone: clean,
+          ),
+        );
+      } catch (_) {
+        // Profile creation handled by DB trigger or RLS policy.
+      }
 
       return user;
     } on AuthException catch (e) {
@@ -180,12 +196,15 @@ class SupabaseService {
   }
 
   Future<User> signIn({
-    required String email,
+    required String phone,
     required String password,
   }) async {
+    final clean = _cleanPhone(phone);
+    final syntheticEmail = _phoneToEmail(clean);
+
     try {
       final response = await auth.signInWithPassword(
-        email: email,
+        email: syntheticEmail,
         password: password,
       );
 
@@ -280,55 +299,267 @@ class SupabaseService {
   //     throw SupabaseServiceException(e.message, cause: e);
   //   }
   // }
-  // Parts & compatibility
+  // ---------------------------------------------------------------------------
+  // Parts Catalog Queries & RPCs (Table: parts)
   // ---------------------------------------------------------------------------
 
-  static const _partWithCompatibilitySelect = '''
-    *,
-    part_compatibility (
-      *
-    )
-  ''';
-
-  Future<List<PartRecord>> fetchParts([PartQueryFilters filters = const PartQueryFilters()]) async {
+  Future<List<String>> fetchMakes() async {
     try {
-      var query = client
-          .from(SupabaseTables.parts)
-          .select(_partWithCompatibilitySelect);
-
-      if (filters.partType != null) {
-        query = query.eq('part_type', filters.partType!);
+      final response = await client.rpc('get_makes');
+      if (response is List && response.isNotEmpty) {
+        return response
+            .map((row) => (row as Map<String, dynamic>)['make'] as String?)
+            .whereType<String>()
+            .toList();
       }
+    } catch (_) {}
 
-      final search = filters.searchQuery?.trim();
-      if (search != null && search.isNotEmpty) {
-        query = query.or(
-          'sn_number.ilike.%$search%,'
-          'part_type.ilike.%$search%,'
-          'application_raw.ilike.%$search%',
-        );
-      }
-
-      final data = await query
-          .order('created_at', ascending: false)
-          .range(filters.offset, filters.offset + filters.limit - 1);
-
-      final parts = (data as List)
-          .cast<Map<String, dynamic>>()
-          .map(PartRecord.fromJson)
-          .toList();
-
-      return _applyCompatibilityFilters(parts, filters);
+    try {
+      final List<dynamic> data = await client.from(SupabaseTables.parts).select('make');
+      return data
+          .map((row) => (row as Map<String, dynamic>)['make'] as String?)
+          .whereType<String>()
+          .toSet()
+          .toList()
+        ..sort();
     } on PostgrestException catch (e) {
       throw SupabaseServiceException(e.message, cause: e);
     }
   }
 
-  Future<PartRecord?> fetchPartById(int partId) async {
+  Future<List<String>> fetchModels({String? make}) async {
+    try {
+      final response = await client.rpc('get_models', params: {
+        if (make != null && make.isNotEmpty) 'p_make': make,
+      });
+      if (response is List && response.isNotEmpty) {
+        return response
+            .map((row) => (row as Map<String, dynamic>)['model'] as String?)
+            .whereType<String>()
+            .toList();
+      }
+    } catch (_) {}
+
+    try {
+      var query = client.from(SupabaseTables.parts).select('model');
+      if (make != null && make.isNotEmpty) {
+        query = query.eq('make', make);
+      }
+      final List<dynamic> data = await query;
+      return data
+          .map((row) => (row as Map<String, dynamic>)['model'] as String?)
+          .whereType<String>()
+          .toSet()
+          .toList()
+        ..sort();
+    } on PostgrestException catch (e) {
+      throw SupabaseServiceException(e.message, cause: e);
+    }
+  }
+
+  Future<List<int>> fetchYears({String? make, String? model}) async {
+    try {
+      final response = await client.rpc('get_years', params: {
+        if (make != null && make.isNotEmpty) 'p_make': make,
+        if (model != null && model.isNotEmpty) 'p_model': model,
+      });
+      if (response is List && response.isNotEmpty) {
+        return response
+            .map((row) => (row as Map<String, dynamic>)['year'] as int?)
+            .whereType<int>()
+            .toList();
+      }
+    } catch (_) {}
+
+    try {
+      var query = client.from(SupabaseTables.parts).select('year');
+      if (make != null && make.isNotEmpty) query = query.eq('make', make);
+      if (model != null && model.isNotEmpty) query = query.eq('model', model);
+      final List<dynamic> data = await query;
+      final yearSet = <int>{};
+      for (final row in data) {
+        final yVal = (row as Map<String, dynamic>)['year'];
+        if (yVal is List) {
+          for (final y in yVal) {
+            final parsed = int.tryParse(y.toString());
+            if (parsed != null) yearSet.add(parsed);
+          }
+        } else if (yVal != null) {
+          final parsed = int.tryParse(yVal.toString());
+          if (parsed != null) yearSet.add(parsed);
+        }
+      }
+      final list = yearSet.toList()..sort((a, b) => b.compareTo(a));
+      return list;
+    } on PostgrestException catch (e) {
+      throw SupabaseServiceException(e.message, cause: e);
+    }
+  }
+
+  Future<List<String>> fetchSystems({String? make, String? model, int? year}) async {
+    try {
+      final response = await client.rpc('get_systems', params: {
+        if (make != null && make.isNotEmpty) 'p_make': make,
+        if (model != null && model.isNotEmpty) 'p_model': model,
+        if (year != null) 'p_year': year,
+      });
+      if (response is List && response.isNotEmpty) {
+        return response
+            .map((row) => (row as Map<String, dynamic>)['system'] as String?)
+            .whereType<String>()
+            .toList();
+      }
+    } catch (_) {}
+
+    try {
+      var query = client.from(SupabaseTables.parts).select('system');
+      if (make != null && make.isNotEmpty) query = query.eq('make', make);
+      if (model != null && model.isNotEmpty) query = query.eq('model', model);
+      if (year != null) query = query.contains('year', [year]);
+      final List<dynamic> data = await query;
+      return data
+          .map((row) => (row as Map<String, dynamic>)['system'] as String?)
+          .whereType<String>()
+          .toSet()
+          .toList()
+        ..sort();
+    } on PostgrestException catch (e) {
+      throw SupabaseServiceException(e.message, cause: e);
+    }
+  }
+
+  Future<List<String>> fetchPartNames({
+    String? make,
+    String? model,
+    int? year,
+    String? system,
+  }) async {
+    try {
+      final response = await client.rpc('get_part_names', params: {
+        if (make != null && make.isNotEmpty) 'p_make': make,
+        if (model != null && model.isNotEmpty) 'p_model': model,
+        if (year != null) 'p_year': year,
+        if (system != null && system.isNotEmpty) 'p_system': system,
+      });
+      if (response is List && response.isNotEmpty) {
+        return response
+            .map((row) {
+              if (row is Map<String, dynamic>) {
+                return (row['item_type'] ?? row['part_name']) as String?;
+              }
+              if (row is String) return row;
+              return null;
+            })
+            .whereType<String>()
+            .toList();
+      }
+    } catch (_) {}
+
+    try {
+      var query = client.from(SupabaseTables.parts).select('item_type');
+      if (make != null && make.isNotEmpty) query = query.eq('make', make);
+      if (model != null && model.isNotEmpty) query = query.eq('model', model);
+      if (year != null) query = query.contains('year', [year]);
+      if (system != null && system.isNotEmpty) query = query.eq('system', system);
+      final List<dynamic> data = await query;
+      return data
+          .map((row) {
+            final m = row as Map<String, dynamic>;
+            return m['item_type'] as String?;
+          })
+          .whereType<String>()
+          .toSet()
+          .toList()
+        ..sort();
+    } on PostgrestException catch (e) {
+      throw SupabaseServiceException(e.message, cause: e);
+    }
+  }
+
+  Future<List<PartRecord>> searchParts({
+    String? make,
+    String? model,
+    int? year,
+    String? system,
+    String? partName,
+    String? searchQuery,
+  }) async {
+    // 1. Try RPC search_parts
+    try {
+      final response = await client.rpc('search_parts', params: {
+        if (make != null && make.isNotEmpty) 'p_make': make,
+        if (model != null && model.isNotEmpty) 'p_model': model,
+        if (year != null) 'p_year': year,
+        if (system != null && system.isNotEmpty) 'p_system': system,
+        if (partName != null && partName.isNotEmpty) 'p_part': partName,
+        if (searchQuery != null && searchQuery.trim().isNotEmpty)
+          'p_query': searchQuery.trim(),
+      });
+
+      if (response is List) {
+        return response
+            .cast<Map<String, dynamic>>()
+            .map(PartRecord.fromJson)
+            .toList();
+      }
+    } catch (_) {}
+
+    // 2. Direct table fallback on parts table
+    try {
+      var query = client.from(SupabaseTables.parts).select();
+
+      if (make != null && make.isNotEmpty) {
+        query = query.eq('make', make);
+      }
+      if (model != null && model.isNotEmpty) {
+        query = query.eq('model', model);
+      }
+      if (year != null) {
+        query = query.contains('year', [year]);
+      }
+      if (system != null && system.isNotEmpty) {
+        query = query.eq('system', system);
+      }
+      if (partName != null && partName.isNotEmpty) {
+        query = query.eq('item_type', partName);
+      }
+
+      final q = searchQuery?.trim();
+      if (q != null && q.isNotEmpty) {
+        query = query.or(
+          'oem.ilike.%$q%,'
+          'sn.ilike.%$q%,'
+          'item_type.ilike.%$q%,'
+          'english_notes.ilike.%$q%,'
+          'arabic_notes.ilike.%$q%',
+        );
+      }
+
+      final List<dynamic> data = await query.order('created_at', ascending: false);
+      return data
+          .cast<Map<String, dynamic>>()
+          .map(PartRecord.fromJson)
+          .toList();
+    } on PostgrestException catch (e) {
+      throw SupabaseServiceException(e.message, cause: e);
+    }
+  }
+
+  Future<List<PartRecord>> fetchParts([PartQueryFilters filters = const PartQueryFilters()]) async {
+    return searchParts(
+      make: filters.brandName,
+      model: filters.model,
+      year: filters.year,
+      system: filters.partType,
+      searchQuery: filters.searchQuery,
+    );
+  }
+
+  Future<PartRecord?> fetchPartById(dynamic partId) async {
     try {
       final data = await client
           .from(SupabaseTables.parts)
-          .select(_partWithCompatibilitySelect)
+          .select()
           .eq('id', partId)
           .maybeSingle();
 
@@ -340,87 +571,7 @@ class SupabaseService {
   }
 
   Future<List<PartRecord>> searchPartsByOeNumber(String oeNumber) async {
-    try {
-      final data = await client
-          .from(SupabaseTables.parts)
-          .select(_partWithCompatibilitySelect)
-          .contains('oe_part_numbers', [oeNumber]);
-
-      return (data as List)
-          .cast<Map<String, dynamic>>()
-          .map(PartRecord.fromJson)
-          .toList();
-    } on PostgrestException catch (e) {
-      throw SupabaseServiceException(e.message, cause: e);
-    }
-  }
-
-  Future<List<String>> fetchDistinctPartTypes() async {
-    try {
-      final data = await client
-          .from(SupabaseTables.parts)
-          .select('part_type')
-          .order('part_type');
-
-      return (data as List)
-          .cast<Map<String, dynamic>>()
-          .map((row) => row['part_type'] as String)
-          .toSet()
-          .toList()
-        ..sort();
-    } on PostgrestException catch (e) {
-      throw SupabaseServiceException(e.message, cause: e);
-    }
-  }
-
-  Future<List<String>> fetchModelsForBrand(int brandId) async {
-    try {
-      final data = await client
-          .from(SupabaseTables.partCompatibility)
-          .select('model')
-          .eq('brand_id', brandId)
-          .order('model');
-
-      return (data as List)
-          .cast<Map<String, dynamic>>()
-          .map((row) => row['model'] as String)
-          .toSet()
-          .toList()
-        ..sort();
-    } on PostgrestException catch (e) {
-      throw SupabaseServiceException(e.message, cause: e);
-    }
-  }
-
-  List<PartRecord> _applyCompatibilityFilters(
-    List<PartRecord> parts,
-    PartQueryFilters filters,
-  ) {
-    final brandId = filters.brandId;
-    final brandName = filters.brandName?.toUpperCase();
-    final model = filters.model;
-    final year = filters.year;
-
-    if (brandId == null &&
-        brandName == null &&
-        model == null &&
-        year == null) {
-      return parts;
-    }
-
-    return parts.where((part) {
-      return part.compatibilities.any((compat) {
-        if (brandId != null && compat.brandId != brandId) return false;
-        if (brandName != null &&
-            compat.brand?.name.toUpperCase() != brandName &&
-            !(compat.rawText?.toUpperCase().contains(brandName) ?? false)) {
-          return false;
-        }
-        if (model != null && compat.model != model) return false;
-        if (!compat.matchesYear(year)) return false;
-        return true;
-      });
-    }).toList();
+    return searchParts(searchQuery: oeNumber);
   }
 
   // ---------------------------------------------------------------------------
