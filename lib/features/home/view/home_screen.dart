@@ -79,16 +79,6 @@ class _HomeScreenState extends State<HomeScreen> {
     _openCatalog(updatedFilters);
   }
 
-  void _selectSystem(String system, {String? category}) {
-    final currentFilters = context.read<HomeCubit>().state.filters;
-    final updatedFilters = currentFilters.copyWith(
-      system: system,
-      category: category,
-      clearCategory: category == null,
-    );
-    _openCatalog(updatedFilters);
-  }
-
   @override
   void dispose() {
     _scrollController.dispose();
@@ -136,16 +126,16 @@ class _HomeScreenState extends State<HomeScreen> {
                 child: MakesSection(onMakeSelected: _selectMake),
               ),
             ),
-            KeyedSubtree(
-              key: _systemsKey,
-              child: RepaintBoundary(
-                child: SystemsSection(
-                  onSystemSelected: _selectSystem,
-                  onCategorySelected: (system, category) =>
-                      _selectSystem(system, category: category),
-                ),
-              ),
-            ),
+            // KeyedSubtree(
+            //   key: _systemsKey,
+            //   child: RepaintBoundary(
+            //     child: SystemsSection(
+            //       onSystemSelected: _selectSystem,
+            //       onCategorySelected: (system, category) =>
+            //           _selectSystem(system, category: category),
+            //     ),
+            //   ),
+            // ),
             KeyedSubtree(
               key: _aboutKey,
               child: const RepaintBoundary(child: AboutSection()),

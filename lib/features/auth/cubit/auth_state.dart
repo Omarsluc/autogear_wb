@@ -16,17 +16,25 @@ class AppAuthState {
   bool get isAuthenticated => user != null;
   bool get isSupabaseReady => SupabaseService.isInitialized;
 
-  String? get displayName {
+  String? get userName {
     final metadata = user?.userMetadata;
-    final name = metadata?['full_name'] as String?;
-    if (name != null && name.isNotEmpty) return name;
-    final phone = metadata?['phone'] as String?;
-    if (phone != null && phone.isNotEmpty) return phone;
+    final name = metadata?['full_name'] as String? ?? metadata?['name'] as String? ?? metadata?['displayName'] as String?;
+    if (name != null && name.trim().isNotEmpty) return name.trim();
     final email = user?.email;
     if (email != null && email.contains('@')) {
       return email.split('@').first;
     }
-    return 'User';
+    return null;
+  }
+
+  String? get userPhone {
+    final phone = user?.phone ?? user?.userMetadata?['phone'] as String? ?? user?.userMetadata?['phoneNumber'] as String?;
+    if (phone != null && phone.trim().isNotEmpty) return phone.trim();
+    return null;
+  }
+
+  String? get displayName {
+    return userName ?? 'User';
   }
 
   AppAuthState copyWith({

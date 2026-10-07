@@ -55,15 +55,25 @@ class _CartScreenState extends State<CartScreen> {
       if (!mounted || signedIn != true) return;
     }
 
+    final currentAuthState = context.read<AuthCubit>().state;
+    final userName = currentAuthState.userName ?? currentAuthState.displayName;
+    final userPhone = currentAuthState.userPhone;
+
     setState(() => _isCheckingOut = true);
 
     try {
-      final whatsappMessage = cartCubit.buildWhatsAppMessage();
+      final whatsappMessage = cartCubit.buildWhatsAppMessage(
+        userName: userName,
+        userPhone: userPhone,
+      );
       
-      // Automatically send cart content quantity and SN numbers to WhatsApp (+201122291859)
+      // Automatically send cart content, user name and phone to WhatsApp (+201122291859)
       await _sendToWhatsApp(whatsappMessage);
 
-      final order = await cartCubit.checkout();
+      final order = await cartCubit.checkout(
+        userName: userName,
+        userPhone: userPhone,
+      );
 
       if (!mounted) return;
 

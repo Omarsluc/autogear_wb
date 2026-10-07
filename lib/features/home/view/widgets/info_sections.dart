@@ -597,19 +597,19 @@ class _ContactInfo extends StatelessWidget {
         _InfoBlock(
           icon: Icons.location_on,
           title: 'Company Address',
-          content: 'Auto Gear Industrial Park, Building 12\nGuangzhou, Guangdong, China',
+          content: '4123 upper Merage Zahraa al Maadi Cairo EG',
         ),
         const SizedBox(height: 24),
         _InfoBlock(
           icon: Icons.phone,
           title: 'Phone',
-          content: '+86 195 6681 2168',
+          content: '+20 1122291859',
         ),
         const SizedBox(height: 24),
         _InfoBlock(
           icon: Icons.email,
           title: 'Email',
-          content: 'info@autogear.com',
+          content: 'autoGear-autoparts@autogear.com',
         ),
         const SizedBox(height: 32),
         Container(

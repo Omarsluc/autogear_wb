@@ -158,7 +158,7 @@ class _FilterPanelState extends State<_FilterPanel> {
 
   void _onSearchChanged(String value) {
     _debounceTimer?.cancel();
-    _debounceTimer = Timer(const Duration(milliseconds: 200), () {
+    _debounceTimer = Timer(const Duration(seconds: 1), () {
       widget.onFiltersChanged(widget.filters.copyWith(searchQuery: value));
     });
   }
@@ -226,8 +226,12 @@ class _FilterPanelState extends State<_FilterPanel> {
                     value: widget.filters.make,
                     items: makesList,
                     width: widget.isWide ? 180 : (width > 500 ? 160 : null),
+                    enabled: true,
                     onChanged: (v) => widget.onFiltersChanged(
-                      widget.filters.copyWith(make: v, clearModel: true, clearCategory: true),
+                      widget.filters.copyWith(
+                        make: v,
+                        clearMake: v == null,
+                      ),
                     ),
                   ),
                   _FilterDropdown(
@@ -235,23 +239,39 @@ class _FilterPanelState extends State<_FilterPanel> {
                     value: widget.filters.model,
                     items: modelsList,
                     width: widget.isWide ? 180 : (width > 500 ? 160 : null),
-                    onChanged: (v) => widget.onFiltersChanged(widget.filters.copyWith(model: v)),
+                    enabled: true,
+                    onChanged: (v) => widget.onFiltersChanged(
+                      widget.filters.copyWith(
+                        model: v,
+                        clearModel: v == null,
+                      ),
+                    ),
                   ),
                   _FilterDropdown<int>(
                     label: AppStrings.tr(context, 'select_year'),
                     value: widget.filters.year,
                     items: yearsList,
                     width: widget.isWide ? 140 : (width > 500 ? 120 : null),
+                    enabled: true,
                     itemLabel: (y) => y.toString(),
-                    onChanged: (v) => widget.onFiltersChanged(widget.filters.copyWith(year: v)),
+                    onChanged: (v) => widget.onFiltersChanged(
+                      widget.filters.copyWith(
+                        year: v,
+                        clearYear: v == null,
+                      ),
+                    ),
                   ),
                   _FilterDropdown(
                     label: AppStrings.tr(context, 'select_system'),
                     value: widget.filters.system,
                     items: systemsList,
                     width: widget.isWide ? 220 : (width > 500 ? 200 : null),
+                    enabled: true,
                     onChanged: (v) => widget.onFiltersChanged(
-                      widget.filters.copyWith(system: v, clearCategory: true),
+                      widget.filters.copyWith(
+                        system: v,
+                        clearSystem: v == null,
+                      ),
                     ),
                   ),
                   _FilterDropdown(
@@ -259,7 +279,13 @@ class _FilterPanelState extends State<_FilterPanel> {
                     value: widget.filters.category,
                     items: partNamesList,
                     width: widget.isWide ? 200 : (width > 500 ? 180 : null),
-                    onChanged: (v) => widget.onFiltersChanged(widget.filters.copyWith(category: v)),
+                    enabled: true,
+                    onChanged: (v) => widget.onFiltersChanged(
+                      widget.filters.copyWith(
+                        category: v,
+                        clearCategory: v == null,
+                      ),
+                    ),
                   ),
                 ],
               ),
@@ -319,33 +345,44 @@ class _FilterDropdown<T> extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final child = DropdownButtonFormField<T>(
-      key: ValueKey('$label-${items.contains(value) ? value : 'none'}'),
+      key: ValueKey('$label-${items.contains(value) ? value : 'none'}-$enabled'),
       initialValue: items.contains(value) ? value : null,
       isExpanded: true,
       isDense: true,
       decoration: InputDecoration(
         labelText: label,
-        labelStyle: const TextStyle(color: AppColors.textSecondary, fontSize: 13),
+        enabled: enabled,
+        fillColor: enabled ? null : Colors.grey.shade100,
+        filled: !enabled,
+        labelStyle: TextStyle(
+          color: enabled ? AppColors.textSecondary : Colors.grey.shade400,
+          fontSize: 13,
+        ),
         contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
       ),
       hint: Text(
         label,
-        style: const TextStyle(fontSize: 14),
+        style: TextStyle(
+          fontSize: 14,
+          color: enabled ? null : Colors.grey.shade400,
+        ),
         overflow: TextOverflow.ellipsis,
         maxLines: 1,
       ),
-      items: items
-          .map(
-            (item) => DropdownMenuItem<T>(
-              value: item,
-              child: Text(
-                itemLabel != null ? itemLabel!(item) : item.toString(),
-                overflow: TextOverflow.ellipsis,
-                maxLines: 1,
-              ),
-            ),
-          )
-          .toList(),
+      items: enabled
+          ? items
+              .map(
+                (item) => DropdownMenuItem<T>(
+                  value: item,
+                  child: Text(
+                    itemLabel != null ? itemLabel!(item) : item.toString(),
+                    overflow: TextOverflow.ellipsis,
+                    maxLines: 1,
+                  ),
+                ),
+              )
+              .toList()
+          : null,
       onChanged: enabled ? onChanged : null,
     );
 

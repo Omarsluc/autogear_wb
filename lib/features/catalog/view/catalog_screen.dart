@@ -136,72 +136,7 @@ class _CatalogScreenState extends State<CatalogScreen> {
                   ),
                 ),
 
-                // Active Filter Chips
-                if (filters.hasActiveFilters)
-                  Container(
-                    width: double.infinity,
-                    color: AppColors.background,
-                    padding: EdgeInsets.symmetric(
-                      horizontal: isMobile ? 24 : 64,
-                      vertical: 12,
-                    ),
-                    child: Wrap(
-                      spacing: 8,
-                      runSpacing: 8,
-                      children: [
-                        if (filters.make != null)
-                          CatalogFilterChip(
-                            label: 'Make: ${filters.make}',
-                            onRemove: () => _onFilterChanged(
-                              filters.copyWith(clearMake: true, clearModel: true),
-                            ),
-                          ),
-                        if (filters.model != null)
-                          CatalogFilterChip(
-                            label: 'Model: ${filters.model}',
-                            onRemove: () => _onFilterChanged(
-                              filters.copyWith(clearModel: true),
-                            ),
-                          ),
-                        if (filters.year != null)
-                          CatalogFilterChip(
-                            label: 'Year: ${filters.year}',
-                            onRemove: () => _onFilterChanged(
-                              filters.copyWith(clearYear: true),
-                            ),
-                          ),
-                        if (filters.system != null)
-                          CatalogFilterChip(
-                            label: 'System: ${filters.system}',
-                            onRemove: () => _onFilterChanged(
-                              filters.copyWith(clearSystem: true, clearCategory: true),
-                            ),
-                          ),
-                        if (filters.category != null)
-                          CatalogFilterChip(
-                            label: 'Part: ${filters.category}',
-                            onRemove: () => _onFilterChanged(
-                              filters.copyWith(clearCategory: true),
-                            ),
-                          ),
-                        if (filters.searchQuery.isNotEmpty)
-                          CatalogFilterChip(
-                            label: 'Search: "${filters.searchQuery}"',
-                            onRemove: () => _onFilterChanged(
-                              filters.copyWith(searchQuery: ''),
-                            ),
-                          ),
-                        ActionChip(
-                          label: Text(
-                            AppStrings.tr(context, 'clear_all'),
-                            style: const TextStyle(color: Colors.red, fontSize: 12),
-                          ),
-                          backgroundColor: Colors.red.shade50,
-                          onPressed: () => _onFilterChanged(const CatalogFilters()),
-                        ),
-                      ],
-                    ),
-                  ),
+
 
                 // Parts Grid Section (Reused CatalogSection Widget)
                 RepaintBoundary(
@@ -269,7 +204,7 @@ class _CatalogFilterBarState extends State<_CatalogFilterBar> {
 
   void _onSearchChanged(String value) {
     _debounceTimer?.cancel();
-    _debounceTimer = Timer(const Duration(milliseconds: 200), () {
+    _debounceTimer = Timer(const Duration(seconds: 1), () {
       widget.onFiltersChanged(widget.filters.copyWith(searchQuery: value));
     });
   }
@@ -296,7 +231,6 @@ class _CatalogFilterBarState extends State<_CatalogFilterBar> {
         final partNamesList = state.availablePartNames.isNotEmpty
             ? state.availablePartNames
             : availableCategories(widget.filters.system);
-
         return Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
@@ -329,8 +263,12 @@ class _CatalogFilterBarState extends State<_CatalogFilterBar> {
                   value: widget.filters.make,
                   items: makesList,
                   width: widget.isWide ? 180 : (width > 500 ? 160 : null),
+                  enabled: true,
                   onChanged: (v) => widget.onFiltersChanged(
-                    widget.filters.copyWith(make: v, clearModel: true, clearCategory: true),
+                    widget.filters.copyWith(
+                      make: v,
+                      clearMake: v == null,
+                    ),
                   ),
                 ),
                 _FilterDropdown(
@@ -338,23 +276,39 @@ class _CatalogFilterBarState extends State<_CatalogFilterBar> {
                   value: widget.filters.model,
                   items: modelsList,
                   width: widget.isWide ? 180 : (width > 500 ? 160 : null),
-                  onChanged: (v) => widget.onFiltersChanged(widget.filters.copyWith(model: v)),
+                  enabled: true,
+                  onChanged: (v) => widget.onFiltersChanged(
+                    widget.filters.copyWith(
+                      model: v,
+                      clearModel: v == null,
+                    ),
+                  ),
                 ),
                 _FilterDropdown<int>(
                   label: AppStrings.tr(context, 'select_year'),
                   value: widget.filters.year,
                   items: yearsList,
                   width: widget.isWide ? 140 : (width > 500 ? 120 : null),
+                  enabled: true,
                   itemLabel: (y) => y.toString(),
-                  onChanged: (v) => widget.onFiltersChanged(widget.filters.copyWith(year: v)),
+                  onChanged: (v) => widget.onFiltersChanged(
+                    widget.filters.copyWith(
+                      year: v,
+                      clearYear: v == null,
+                    ),
+                  ),
                 ),
                 _FilterDropdown(
                   label: AppStrings.tr(context, 'select_system'),
                   value: widget.filters.system,
                   items: systemsList,
                   width: widget.isWide ? 200 : (width > 500 ? 180 : null),
+                  enabled: true,
                   onChanged: (v) => widget.onFiltersChanged(
-                    widget.filters.copyWith(system: v, clearCategory: true),
+                    widget.filters.copyWith(
+                      system: v,
+                      clearSystem: v == null,
+                    ),
                   ),
                 ),
                 _FilterDropdown(
@@ -362,7 +316,13 @@ class _CatalogFilterBarState extends State<_CatalogFilterBar> {
                   value: widget.filters.category,
                   items: partNamesList,
                   width: widget.isWide ? 200 : (width > 500 ? 180 : null),
-                  onChanged: (v) => widget.onFiltersChanged(widget.filters.copyWith(category: v)),
+                  enabled: true,
+                  onChanged: (v) => widget.onFiltersChanged(
+                    widget.filters.copyWith(
+                      category: v,
+                      clearCategory: v == null,
+                    ),
+                  ),
                 ),
               ],
             ),
@@ -395,33 +355,44 @@ class _FilterDropdown<T> extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final child = DropdownButtonFormField<T>(
-      key: ValueKey('$label-${items.contains(value) ? value : 'none'}'),
+      key: ValueKey('$label-${items.contains(value) ? value : 'none'}-$enabled'),
       initialValue: items.contains(value) ? value : null,
       isExpanded: true,
       isDense: true,
       decoration: InputDecoration(
         labelText: label,
-        labelStyle: const TextStyle(color: AppColors.textSecondary, fontSize: 13),
+        enabled: enabled,
+        fillColor: enabled ? null : Colors.grey.shade100,
+        filled: !enabled,
+        labelStyle: TextStyle(
+          color: enabled ? AppColors.textSecondary : Colors.grey.shade400,
+          fontSize: 13,
+        ),
         contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
       ),
       hint: Text(
         label,
-        style: const TextStyle(fontSize: 14),
+        style: TextStyle(
+          fontSize: 14,
+          color: enabled ? null : Colors.grey.shade400,
+        ),
         overflow: TextOverflow.ellipsis,
         maxLines: 1,
       ),
-      items: items
-          .map(
-            (item) => DropdownMenuItem<T>(
-              value: item,
-              child: Text(
-                itemLabel != null ? itemLabel!(item) : item.toString(),
-                overflow: TextOverflow.ellipsis,
-                maxLines: 1,
-              ),
-            ),
-          )
-          .toList(),
+      items: enabled
+          ? items
+              .map(
+                (item) => DropdownMenuItem<T>(
+                  value: item,
+                  child: Text(
+                    itemLabel != null ? itemLabel!(item) : item.toString(),
+                    overflow: TextOverflow.ellipsis,
+                    maxLines: 1,
+                  ),
+                ),
+              )
+              .toList()
+          : null,
       onChanged: enabled ? onChanged : null,
     );
 

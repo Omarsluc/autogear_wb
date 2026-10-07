@@ -122,6 +122,8 @@ final catalogParts = <AutoPart>[
     system: 'Electrical System',
     category: 'Oxygen Sensor',
     description: 'Direct-fit upstream oxygen sensor for improved fuel efficiency and emissions control.',
+    retailPrice: 650.0,
+    wholesalePrice: 520.0,
   ),
   const AutoPart(
     id: '2',
@@ -134,6 +136,8 @@ final catalogParts = <AutoPart>[
     system: 'Braking System',
     category: 'Brake Pad Set',
     description: 'Premium ceramic brake pads with low dust and quiet operation.',
+    retailPrice: 850.0,
+    wholesalePrice: 680.0,
   ),
   const AutoPart(
     id: '3',
@@ -146,6 +150,8 @@ final catalogParts = <AutoPart>[
     system: 'Electrical System',
     category: 'Alternator',
     description: 'High-output alternator with OE-quality bearings and voltage regulation.',
+    retailPrice: 3200.0,
+    wholesalePrice: 2750.0,
   ),
   const AutoPart(
     id: '4',
@@ -158,6 +164,8 @@ final catalogParts = <AutoPart>[
     system: 'Suspension & Steering System',
     category: 'Control Arm',
     description: 'Front lower control arm with pre-installed bushings and ball joint.',
+    retailPrice: 1450.0,
+    wholesalePrice: 1180.0,
   ),
   const AutoPart(
     id: '5',
@@ -170,6 +178,8 @@ final catalogParts = <AutoPart>[
     system: 'Engine System',
     category: 'Fuel Pump',
     description: 'Complete in-tank fuel pump module with sender unit and strainer.',
+    retailPrice: 2100.0,
+    wholesalePrice: 1750.0,
   ),
   const AutoPart(
     id: '6',
@@ -182,6 +192,8 @@ final catalogParts = <AutoPart>[
     system: 'Cooling System',
     category: 'Water Pump',
     description: 'Engine water pump with metal impeller and included gasket kit.',
+    retailPrice: 950.0,
+    wholesalePrice: 780.0,
   ),
   const AutoPart(
     id: '7',
@@ -194,6 +206,8 @@ final catalogParts = <AutoPart>[
     system: 'Suspension & Steering System',
     category: 'Shock Absorber',
     description: 'Gas-charged rear shock absorbers for stable ride and handling.',
+    retailPrice: 1800.0,
+    wholesalePrice: 1490.0,
   ),
   const AutoPart(
     id: '8',
@@ -206,6 +220,8 @@ final catalogParts = <AutoPart>[
     system: 'Engine System',
     category: 'Ignition Coil',
     description: 'Direct ignition coil pack set for smooth engine start and performance.',
+    retailPrice: 1250.0,
+    wholesalePrice: 990.0,
   ),
   const AutoPart(
     id: '9',
@@ -218,6 +234,8 @@ final catalogParts = <AutoPart>[
     system: 'Electrical System',
     category: 'ABS Sensor',
     description: 'Front ABS speed sensor for accurate wheel speed detection.',
+    retailPrice: 420.0,
+    wholesalePrice: 340.0,
   ),
   const AutoPart(
     id: '10',
@@ -230,6 +248,8 @@ final catalogParts = <AutoPart>[
     system: 'Cooling System',
     category: 'Thermostat',
     description: 'Thermostat with integrated housing for quick replacement.',
+    retailPrice: 580.0,
+    wholesalePrice: 460.0,
   ),
   const AutoPart(
     id: '11',
@@ -242,6 +262,8 @@ final catalogParts = <AutoPart>[
     system: 'Electrical System',
     category: 'Starter Motor',
     description: 'High-torque starter motor for reliable cold-weather starts.',
+    retailPrice: 2450.0,
+    wholesalePrice: 1980.0,
   ),
   const AutoPart(
     id: '12',
@@ -254,6 +276,8 @@ final catalogParts = <AutoPart>[
     system: 'Braking System',
     category: 'Brake Disc',
     description: 'Vented front brake rotors with anti-corrosion coating.',
+    retailPrice: 1350.0,
+    wholesalePrice: 1100.0,
   ),
   const AutoPart(
     id: '13',
@@ -266,6 +290,8 @@ final catalogParts = <AutoPart>[
     system: 'Engine System',
     category: 'Fuel Injector',
     description: 'Multi-port fuel injectors for precise fuel delivery.',
+    retailPrice: 2800.0,
+    wholesalePrice: 2300.0,
   ),
   const AutoPart(
     id: '14',
@@ -278,6 +304,8 @@ final catalogParts = <AutoPart>[
     system: 'Suspension & Steering System',
     category: 'Wheel Bearing',
     description: 'Front wheel bearing hub assembly with ABS ring.',
+    retailPrice: 1650.0,
+    wholesalePrice: 1350.0,
   ),
   const AutoPart(
     id: '15',
@@ -290,6 +318,8 @@ final catalogParts = <AutoPart>[
     system: 'Cooling System',
     category: 'A/C Compressor',
     description: 'OE-spec A/C compressor for consistent cabin cooling.',
+    retailPrice: 3900.0,
+    wholesalePrice: 3200.0,
   ),
   const AutoPart(
     id: '16',
@@ -302,6 +332,8 @@ final catalogParts = <AutoPart>[
     system: 'Electrical System',
     category: 'Crankshaft Sensor',
     description: 'Hall-effect crankshaft position sensor for engine timing.',
+    retailPrice: 490.0,
+    wholesalePrice: 390.0,
   ),
   const AutoPart(
     id: '17',
@@ -314,6 +346,8 @@ final catalogParts = <AutoPart>[
     system: 'Suspension & Steering System',
     category: 'CV Axle Shaft',
     description: 'Complete front left CV axle with new boots and clamps.',
+    retailPrice: 2250.0,
+    wholesalePrice: 1850.0,
   ),
   const AutoPart(
     id: '18',
@@ -326,6 +360,8 @@ final catalogParts = <AutoPart>[
     system: 'Cooling System',
     category: 'Radiator',
     description: 'Aluminum core radiator for optimal heat dissipation.',
+    retailPrice: 2150.0,
+    wholesalePrice: 1750.0,
   ),
   const AutoPart(
     id: '19',
@@ -338,6 +374,8 @@ final catalogParts = <AutoPart>[
     system: 'Suspension & Steering System',
     category: 'Ball Joint',
     description: 'Heavy-duty ball joint for off-road durability.',
+    retailPrice: 550.0,
+    wholesalePrice: 420.0,
   ),
   const AutoPart(
     id: '20',
@@ -350,6 +388,8 @@ final catalogParts = <AutoPart>[
     system: 'Engine System',
     category: 'Spark Plug',
     description: 'Iridium spark plugs for long service life and fuel economy.',
+    retailPrice: 680.0,
+    wholesalePrice: 540.0,
   ),
   const AutoPart(
     id: '21',
@@ -362,6 +402,8 @@ final catalogParts = <AutoPart>[
     system: 'Suspension & Steering System',
     category: 'Tie Rod End',
     description: 'Outer tie rod end for precise steering alignment.',
+    retailPrice: 480.0,
+    wholesalePrice: 380.0,
   ),
   const AutoPart(
     id: '22',
@@ -374,6 +416,8 @@ final catalogParts = <AutoPart>[
     system: 'Electrical System',
     category: 'Power Window Switch',
     description: 'Master power window switch panel with auto-up/down function.',
+    retailPrice: 720.0,
+    wholesalePrice: 580.0,
   ),
   const AutoPart(
     id: '23',
@@ -386,6 +430,8 @@ final catalogParts = <AutoPart>[
     system: 'Braking System',
     category: 'Brake Caliper',
     description: 'Remanufactured rear left brake caliper with bracket.',
+    retailPrice: 1750.0,
+    wholesalePrice: 1420.0,
   ),
   const AutoPart(
     id: '24',
@@ -398,6 +444,8 @@ final catalogParts = <AutoPart>[
     system: 'Engine System',
     category: 'Throttle Body',
     description: 'Electronic throttle body with integrated position sensor.',
+    retailPrice: 2600.0,
+    wholesalePrice: 2100.0,
   ),
   const AutoPart(
     id: '25',
@@ -410,6 +458,8 @@ final catalogParts = <AutoPart>[
     system: 'Engine System',
     category: 'Engine Mount',
     description: 'Hydraulic engine mount to reduce vibration and noise.',
+    retailPrice: 1150.0,
+    wholesalePrice: 920.0,
   ),
   const AutoPart(
     id: '26',
@@ -422,6 +472,8 @@ final catalogParts = <AutoPart>[
     system: 'Cooling System',
     category: 'Radiator Fan Assy',
     description: 'Complete radiator cooling fan assembly with shroud.',
+    retailPrice: 1850.0,
+    wholesalePrice: 1480.0,
   ),
   const AutoPart(
     id: '27',
@@ -434,6 +486,8 @@ final catalogParts = <AutoPart>[
     system: 'Suspension & Steering System',
     category: 'Strut Mount',
     description: 'Front strut mount kit with bearing for smooth steering.',
+    retailPrice: 890.0,
+    wholesalePrice: 710.0,
   ),
   const AutoPart(
     id: '28',
@@ -446,6 +500,8 @@ final catalogParts = <AutoPart>[
     system: 'Engine System',
     category: 'IAC Valve',
     description: 'Idle air control valve for stable engine idle speed.',
+    retailPrice: 620.0,
+    wholesalePrice: 490.0,
   ),
   const AutoPart(
     id: '29',
@@ -458,6 +514,8 @@ final catalogParts = <AutoPart>[
     system: 'Engine System',
     category: 'VVT Solenoids',
     description: 'Variable valve timing solenoid for intake camshaft.',
+    retailPrice: 530.0,
+    wholesalePrice: 410.0,
   ),
   const AutoPart(
     id: '30',
@@ -470,6 +528,8 @@ final catalogParts = <AutoPart>[
     system: 'Braking System',
     category: 'Brake Master Cylinder',
     description: 'Brake master cylinder with reservoir for reliable braking.',
+    retailPrice: 1950.0,
+    wholesalePrice: 1580.0,
   ),
   const AutoPart(
     id: '31',
@@ -482,6 +542,8 @@ final catalogParts = <AutoPart>[
     system: 'Cooling System',
     category: 'Blower Motor',
     description: 'HVAC blower motor for consistent cabin airflow.',
+    retailPrice: 1100.0,
+    wholesalePrice: 890.0,
   ),
   const AutoPart(
     id: '32',
@@ -494,6 +556,8 @@ final catalogParts = <AutoPart>[
     system: 'Braking System',
     category: 'Brake Pad Set',
     description: 'Rear ceramic brake pad set with hardware kit.',
+    retailPrice: 780.0,
+    wholesalePrice: 620.0,
   ),
   const AutoPart(
     id: '33',
@@ -506,6 +570,8 @@ final catalogParts = <AutoPart>[
     system: 'Electrical System',
     category: 'Oxygen Sensor',
     description: 'Downstream O2 sensor for catalytic converter monitoring.',
+    retailPrice: 590.0,
+    wholesalePrice: 470.0,
   ),
   const AutoPart(
     id: '34',
@@ -518,6 +584,8 @@ final catalogParts = <AutoPart>[
     system: 'Suspension & Steering System',
     category: 'Control Arm',
     description: 'Rear upper control arm with bushings pre-pressed.',
+    retailPrice: 1650.0,
+    wholesalePrice: 1320.0,
   ),
   const AutoPart(
     id: '35',
@@ -530,6 +598,8 @@ final catalogParts = <AutoPart>[
     system: 'Electrical System',
     category: 'Alternator',
     description: '150A alternator for luxury vehicle electrical demands.',
+    retailPrice: 4200.0,
+    wholesalePrice: 3450.0,
   ),
   const AutoPart(
     id: '36',
@@ -542,6 +612,8 @@ final catalogParts = <AutoPart>[
     system: 'Cooling System',
     category: 'Water Pump',
     description: 'Electric water pump for turbocharged engine cooling.',
+    retailPrice: 3100.0,
+    wholesalePrice: 2550.0,
   ),
 ];
 
@@ -549,8 +621,14 @@ List<AutoPart> filterParts(CatalogFilters filters) {
   final query = filters.searchQuery.trim().toLowerCase();
 
   return catalogParts.where((part) {
-    if (filters.make != null && part.make != filters.make) return false;
-    if (filters.model != null && part.model != filters.model) return false;
+    if (filters.make != null &&
+        !part.make.toLowerCase().contains(filters.make!.toLowerCase())) {
+      return false;
+    }
+    if (filters.model != null &&
+        !part.model.toLowerCase().contains(filters.model!.toLowerCase())) {
+      return false;
+    }
     if (!part.matchesYear(filters.year)) return false;
     if (filters.system != null && part.system != filters.system) return false;
     if (filters.category != null && part.category != filters.category) return false;
@@ -562,12 +640,24 @@ List<AutoPart> filterParts(CatalogFilters filters) {
 }
 
 List<String> availableModels(String? make) {
-  if (make == null) return [];
+  if (make == null || make.isEmpty) {
+    final all = <String>{};
+    for (final list in modelsByMake.values) {
+      all.addAll(list);
+    }
+    return all.toList()..sort();
+  }
   return modelsByMake[make] ?? [];
 }
 
 List<String> availableCategories(String? system) {
-  if (system == null) return [];
+  if (system == null || system.isEmpty) {
+    final all = <String>{};
+    for (final list in categoriesBySystem.values) {
+      all.addAll(list);
+    }
+    return all.toList()..sort();
+  }
   return categoriesBySystem[system] ?? [];
 }
 

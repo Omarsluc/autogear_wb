@@ -146,7 +146,7 @@ class CatalogSection extends StatelessWidget {
                 crossAxisCount: crossAxisCount,
                 crossAxisSpacing: 20,
                 mainAxisSpacing: 20,
-                childAspectRatio: width > 1200 ? 0.92 : (width > 700 ? 0.85 : 0.80),
+                childAspectRatio: width > 1200 ? 0.84 : (width > 700 ? 0.76 : 0.72),
               ),
               itemCount: parts.length,
               itemBuilder: (context, index) => PartCard(part: parts[index]),
@@ -390,10 +390,9 @@ class _PartCardState extends State<PartCard> {
               PartInfoRow(label: 'Years', value: part.years.join(', ')),
               PartInfoRow(label: 'System', value: part.system),
               PartInfoRow(label: 'Category', value: part.category),
-              if (part.retailPrice != null)
-                PartInfoRow(label: 'Retail Price', value: 'EGP ${part.retailPrice!.toStringAsFixed(2)}'),
-              if (part.wholesalePrice != null)
-                PartInfoRow(label: 'Wholesale', value: 'EGP ${part.wholesalePrice!.toStringAsFixed(2)}'),
+              const SizedBox(height: 10),
+              _buildPriceSection(context, part),
+              const SizedBox(height: 10),
               if (part.country != null && part.country!.isNotEmpty)
                 PartInfoRow(label: 'Country', value: part.country!),
               if (part.englishNotes != null && part.englishNotes!.isNotEmpty)
@@ -419,13 +418,125 @@ class _PartCardState extends State<PartCard> {
     );
   }
 
+  Widget _buildPriceSection(BuildContext context, AutoPart part) {
+    final hasWholesale = part.wholesalePrice != null && part.wholesalePrice! > 0;
+    final hasRetail = part.retailPrice != null && part.retailPrice! > 0;
+    final displayPrice = hasWholesale ? part.wholesalePrice! : (hasRetail ? part.retailPrice! : null);
+
+    if (displayPrice == null) {
+      return Container(
+        width: double.infinity,
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        decoration: BoxDecoration(
+          color: AppColors.lightBlue.withValues(alpha: 0.4),
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(color: AppColors.border),
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Row(
+              children: const [
+                Icon(Icons.request_quote_outlined, size: 16, color: AppColors.primary),
+                SizedBox(width: 8),
+                Text(
+                  'Price on Request',
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w700,
+                    color: AppColors.primary,
+                  ),
+                ),
+              ],
+            ),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+              decoration: BoxDecoration(
+                color: AppColors.primary.withValues(alpha: 0.08),
+                borderRadius: BorderRadius.circular(4),
+              ),
+              child: const Text(
+                'QUOTE',
+                style: TextStyle(
+                  fontSize: 10,
+                  fontWeight: FontWeight.bold,
+                  color: AppColors.primary,
+                ),
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    // int? discountPercent;
+    // if (hasRetail && hasWholesale && part.retailPrice! > part.wholesalePrice!) {
+    //   discountPercent = (((part.retailPrice! - part.wholesalePrice!) / part.retailPrice!) * 100).round();
+    // }
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [
+            AppColors.primary.withValues(alpha: 0.08),
+            AppColors.lightBlue.withValues(alpha: 0.3),
+          ],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: AppColors.primary.withValues(alpha: 0.2)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(
+            hasWholesale ? 'WHOLESALE PRICE' : 'PRICE',
+            style: const TextStyle(
+              fontSize: 9,
+              fontWeight: FontWeight.w800,
+              letterSpacing: 0.5,
+              color: AppColors.textSecondary,
+            ),
+          ),
+          const SizedBox(height: 2),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.baseline,
+            textBaseline: TextBaseline.alphabetic,
+            children: [
+              const Text(
+                'EGP ',
+                style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.bold,
+                  color: AppColors.primary,
+                ),
+              ),
+              Text(
+                displayPrice.toStringAsFixed(2),
+                style: const TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w900,
+                  color: AppColors.primaryDark,
+                  height: 1.0,
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final part = widget.part;
     final inStockLabel = AppStrings.tr(context, 'in_stock');
     final outStockLabel = AppStrings.tr(context, 'out_of_stock');
     final skuLabel = AppStrings.tr(context, 'sku');
-    final oemLabel = AppStrings.tr(context, 'oem');
     final vehicleLabel = AppStrings.tr(context, 'vehicle');
     final yearsLabel = AppStrings.tr(context, 'years');
     final addToCartLabel = AppStrings.tr(context, 'add_to_cart');
@@ -499,25 +610,22 @@ class _PartCardState extends State<PartCard> {
                               ),
                             ),
                           ),
-                          if (part.retailPrice != null) ...[
-                            const SizedBox(height: 4),
-                            Text(
-                              'Retail: EGP ${part.retailPrice!.toStringAsFixed(2)}',
-                              style: const TextStyle(
-                                fontSize: 12,
-                                fontWeight: FontWeight.bold,
-                                color: AppColors.primary,
+                          if (part.wholesalePrice != null || part.retailPrice != null) ...[
+                            const SizedBox(height: 6),
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                              decoration: BoxDecoration(
+                                color: AppColors.primary.withValues(alpha: 0.08),
+                                borderRadius: BorderRadius.circular(8),
+                                border: Border.all(color: AppColors.primary.withValues(alpha: 0.15)),
                               ),
-                            ),
-                          ],
-                          if (part.wholesalePrice != null) ...[
-                            const SizedBox(height: 2),
-                            Text(
-                              'Wholesale: EGP ${part.wholesalePrice!.toStringAsFixed(2)}',
-                              style: const TextStyle(
-                                fontSize: 11,
-                                fontWeight: FontWeight.w600,
-                                color: AppColors.textSecondary,
+                              child: Text(
+                                'EGP ${(part.wholesalePrice ?? part.retailPrice!).toStringAsFixed(2)}',
+                                style: const TextStyle(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w800,
+                                  color: AppColors.primary,
+                                ),
                               ),
                             ),
                           ],
@@ -532,12 +640,15 @@ class _PartCardState extends State<PartCard> {
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
                   ),
-                  const SizedBox(height: 8),
+                  const SizedBox(height: 6),
                   Text(part.description, maxLines: 2, overflow: TextOverflow.ellipsis),
+                  const SizedBox(height: 12),
+                  _buildPriceSection(context, part),
                   const Spacer(),
-                  const Divider(height: 24),
+                  const Divider(height: 20),
                   PartInfoRow(label: skuLabel, value: part.sku),
-                  // PartInfoRow(label: oemLabel, value: part.oemNumber),
+                  if (part.oemNumber.isNotEmpty)
+                    // PartInfoRow(label: oemLabel, value: part.oemNumber),
                   PartInfoRow(label: vehicleLabel, value: '${part.make} ${part.model}'),
                   PartInfoRow(
                     label: yearsLabel,

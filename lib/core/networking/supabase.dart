@@ -303,58 +303,97 @@ class SupabaseService {
   // Parts Catalog Queries & RPCs (Table: parts)
   // ---------------------------------------------------------------------------
 
+  List<String> _cleanAndNormalizeTokens(List<String> rawTokens) {
+    final Map<String, String> canonical = {};
+
+    for (final raw in rawTokens) {
+      if (raw.trim().isEmpty) continue;
+
+      final tokens = raw.split(',');
+      for (final token in tokens) {
+        final cleaned = token.trim();
+        if (cleaned.isEmpty) continue;
+
+        final key = cleaned.toLowerCase();
+        if (!canonical.containsKey(key)) {
+          final String formatted;
+          if (cleaned.length <= 4 && cleaned == cleaned.toLowerCase()) {
+            formatted = cleaned.toUpperCase();
+          } else if (cleaned.length <= 4 && cleaned == cleaned.toUpperCase()) {
+            formatted = cleaned;
+          } else {
+            formatted = cleaned[0].toUpperCase() + cleaned.substring(1);
+          }
+          canonical[key] = formatted;
+        }
+      }
+    }
+
+    final sortedList = canonical.values.toList()
+      ..sort((a, b) => a.toLowerCase().compareTo(b.toLowerCase()));
+    return sortedList;
+  }
+
   Future<List<String>> fetchMakes() async {
+    final rawMakes = <String>[];
+
     try {
       final response = await client.rpc('get_makes');
       if (response is List && response.isNotEmpty) {
-        return response
-            .map((row) => (row as Map<String, dynamic>)['make'] as String?)
-            .whereType<String>()
-            .toList();
+        for (final row in response) {
+          final m = (row as Map<String, dynamic>)['make'] as String?;
+          if (m != null && m.isNotEmpty) rawMakes.add(m);
+        }
       }
     } catch (_) {}
 
-    try {
-      final List<dynamic> data = await client.from(SupabaseTables.parts).select('make');
-      return data
-          .map((row) => (row as Map<String, dynamic>)['make'] as String?)
-          .whereType<String>()
-          .toSet()
-          .toList()
-        ..sort();
-    } on PostgrestException catch (e) {
-      throw SupabaseServiceException(e.message, cause: e);
+    if (rawMakes.isEmpty) {
+      try {
+        final List<dynamic> data = await client.from(SupabaseTables.parts).select('make');
+        for (final row in data) {
+          final m = (row as Map<String, dynamic>)['make'] as String?;
+          if (m != null && m.isNotEmpty) rawMakes.add(m);
+        }
+      } on PostgrestException catch (e) {
+        throw SupabaseServiceException(e.message, cause: e);
+      }
     }
+
+    return _cleanAndNormalizeTokens(rawMakes);
   }
 
   Future<List<String>> fetchModels({String? make}) async {
+    final rawModels = <String>[];
+
     try {
       final response = await client.rpc('get_models', params: {
         if (make != null && make.isNotEmpty) 'p_make': make,
       });
       if (response is List && response.isNotEmpty) {
-        return response
-            .map((row) => (row as Map<String, dynamic>)['model'] as String?)
-            .whereType<String>()
-            .toList();
+        for (final row in response) {
+          final m = (row as Map<String, dynamic>)['model'] as String?;
+          if (m != null && m.isNotEmpty) rawModels.add(m);
+        }
       }
     } catch (_) {}
 
-    try {
-      var query = client.from(SupabaseTables.parts).select('model');
-      if (make != null && make.isNotEmpty) {
-        query = query.eq('make', make);
+    if (rawModels.isEmpty) {
+      try {
+        var query = client.from(SupabaseTables.parts).select('model');
+        if (make != null && make.isNotEmpty) {
+          query = query.ilike('make', '%$make%');
+        }
+        final List<dynamic> data = await query;
+        for (final row in data) {
+          final m = (row as Map<String, dynamic>)['model'] as String?;
+          if (m != null && m.isNotEmpty) rawModels.add(m);
+        }
+      } on PostgrestException catch (e) {
+        throw SupabaseServiceException(e.message, cause: e);
       }
-      final List<dynamic> data = await query;
-      return data
-          .map((row) => (row as Map<String, dynamic>)['model'] as String?)
-          .whereType<String>()
-          .toSet()
-          .toList()
-        ..sort();
-    } on PostgrestException catch (e) {
-      throw SupabaseServiceException(e.message, cause: e);
     }
+
+    return _cleanAndNormalizeTokens(rawModels);
   }
 
   Future<List<int>> fetchYears({String? make, String? model}) async {
@@ -373,8 +412,8 @@ class SupabaseService {
 
     try {
       var query = client.from(SupabaseTables.parts).select('year');
-      if (make != null && make.isNotEmpty) query = query.eq('make', make);
-      if (model != null && model.isNotEmpty) query = query.eq('model', model);
+      if (make != null && make.isNotEmpty) query = query.ilike('make', '%$make%');
+      if (model != null && model.isNotEmpty) query = query.ilike('model', '%$model%');
       final List<dynamic> data = await query;
       final yearSet = <int>{};
       for (final row in data) {
@@ -397,6 +436,8 @@ class SupabaseService {
   }
 
   Future<List<String>> fetchSystems({String? make, String? model, int? year}) async {
+    final rawSystems = <String>[];
+
     try {
       final response = await client.rpc('get_systems', params: {
         if (make != null && make.isNotEmpty) 'p_make': make,
@@ -404,28 +445,30 @@ class SupabaseService {
         if (year != null) 'p_year': year,
       });
       if (response is List && response.isNotEmpty) {
-        return response
-            .map((row) => (row as Map<String, dynamic>)['system'] as String?)
-            .whereType<String>()
-            .toList();
+        for (final row in response) {
+          final s = (row as Map<String, dynamic>)['system'] as String?;
+          if (s != null && s.isNotEmpty) rawSystems.add(s);
+        }
       }
     } catch (_) {}
 
-    try {
-      var query = client.from(SupabaseTables.parts).select('system');
-      if (make != null && make.isNotEmpty) query = query.eq('make', make);
-      if (model != null && model.isNotEmpty) query = query.eq('model', model);
-      if (year != null) query = query.contains('year', [year]);
-      final List<dynamic> data = await query;
-      return data
-          .map((row) => (row as Map<String, dynamic>)['system'] as String?)
-          .whereType<String>()
-          .toSet()
-          .toList()
-        ..sort();
-    } on PostgrestException catch (e) {
-      throw SupabaseServiceException(e.message, cause: e);
+    if (rawSystems.isEmpty) {
+      try {
+        var query = client.from(SupabaseTables.parts).select('system');
+        if (make != null && make.isNotEmpty) query = query.ilike('make', '%$make%');
+        if (model != null && model.isNotEmpty) query = query.ilike('model', '%$model%');
+        if (year != null) query = query.contains('year', [year]);
+        final List<dynamic> data = await query;
+        for (final row in data) {
+          final s = (row as Map<String, dynamic>)['system'] as String?;
+          if (s != null && s.isNotEmpty) rawSystems.add(s);
+        }
+      } on PostgrestException catch (e) {
+        throw SupabaseServiceException(e.message, cause: e);
+      }
     }
+
+    return _cleanAndNormalizeTokens(rawSystems);
   }
 
   Future<List<String>> fetchPartNames({
@@ -434,6 +477,8 @@ class SupabaseService {
     int? year,
     String? system,
   }) async {
+    final rawPartNames = <String>[];
+
     try {
       final response = await client.rpc('get_part_names', params: {
         if (make != null && make.isNotEmpty) 'p_make': make,
@@ -442,38 +487,37 @@ class SupabaseService {
         if (system != null && system.isNotEmpty) 'p_system': system,
       });
       if (response is List && response.isNotEmpty) {
-        return response
-            .map((row) {
-              if (row is Map<String, dynamic>) {
-                return (row['item_type'] ?? row['part_name']) as String?;
-              }
-              if (row is String) return row;
-              return null;
-            })
-            .whereType<String>()
-            .toList();
+        for (final row in response) {
+          String? p;
+          if (row is Map<String, dynamic>) {
+            p = (row['item_type'] ?? row['part_name']) as String?;
+          } else if (row is String) {
+            p = row;
+          }
+          if (p != null && p.isNotEmpty) rawPartNames.add(p);
+        }
       }
     } catch (_) {}
 
-    try {
-      var query = client.from(SupabaseTables.parts).select('item_type');
-      if (make != null && make.isNotEmpty) query = query.eq('make', make);
-      if (model != null && model.isNotEmpty) query = query.eq('model', model);
-      if (year != null) query = query.contains('year', [year]);
-      if (system != null && system.isNotEmpty) query = query.eq('system', system);
-      final List<dynamic> data = await query;
-      return data
-          .map((row) {
-            final m = row as Map<String, dynamic>;
-            return m['item_type'] as String?;
-          })
-          .whereType<String>()
-          .toSet()
-          .toList()
-        ..sort();
-    } on PostgrestException catch (e) {
-      throw SupabaseServiceException(e.message, cause: e);
+    if (rawPartNames.isEmpty) {
+      try {
+        var query = client.from(SupabaseTables.parts).select('item_type');
+        if (make != null && make.isNotEmpty) query = query.ilike('make', '%$make%');
+        if (model != null && model.isNotEmpty) query = query.ilike('model', '%$model%');
+        if (year != null) query = query.contains('year', [year]);
+        if (system != null && system.isNotEmpty) query = query.eq('system', system);
+        final List<dynamic> data = await query;
+        for (final row in data) {
+          final m = row as Map<String, dynamic>;
+          final p = m['item_type'] as String?;
+          if (p != null && p.isNotEmpty) rawPartNames.add(p);
+        }
+      } on PostgrestException catch (e) {
+        throw SupabaseServiceException(e.message, cause: e);
+      }
     }
+
+    return _cleanAndNormalizeTokens(rawPartNames);
   }
 
   Future<List<PartRecord>> searchParts({
@@ -509,10 +553,10 @@ class SupabaseService {
       var query = client.from(SupabaseTables.parts).select();
 
       if (make != null && make.isNotEmpty) {
-        query = query.eq('make', make);
+        query = query.ilike('make', '%$make%');
       }
       if (model != null && model.isNotEmpty) {
-        query = query.eq('model', model);
+        query = query.ilike('model', '%$model%');
       }
       if (year != null) {
         query = query.contains('year', [year]);

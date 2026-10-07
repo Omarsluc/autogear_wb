@@ -50,8 +50,18 @@ class CartCubit extends Cubit<CartState> {
     emit(const CartState());
   }
 
-  String buildWhatsAppMessage() {
-    final buffer = StringBuffer('Auto Gear Order Request:\n\n');
+  String buildWhatsAppMessage({String? userName, String? userPhone}) {
+    final buffer = StringBuffer('Auto Gear Order Request:\n');
+    if (userName != null && userName.isNotEmpty) {
+      buffer.writeln('Customer Name: $userName');
+    }
+    if (userPhone != null && userPhone.isNotEmpty) {
+      buffer.writeln('Phone: $userPhone');
+    }
+    if ((userName != null && userName.isNotEmpty) || (userPhone != null && userPhone.isNotEmpty)) {
+      buffer.writeln();
+    }
+    buffer.writeln('Order Items:');
     for (var i = 0; i < state.items.length; i++) {
       final item = state.items[i];
       buffer.writeln('${i + 1}. Part Name: ${item.part.name}');
@@ -65,10 +75,10 @@ class CartCubit extends Cubit<CartState> {
     return buffer.toString().trim();
   }
 
-  CreateOrderRequest toOrderRequest() {
+  CreateOrderRequest toOrderRequest({String? userName, String? userPhone}) {
     return CreateOrderRequest(
       status: 'pending',
-      whatsappMessage: buildWhatsAppMessage(),
+      whatsappMessage: buildWhatsAppMessage(userName: userName, userPhone: userPhone),
       items: state.items
           .map(
             (item) => CreateOrderItemRequest(
@@ -81,12 +91,14 @@ class CartCubit extends Cubit<CartState> {
     );
   }
 
-  Future<OrderRecord> checkout() async {
+  Future<OrderRecord> checkout({String? userName, String? userPhone}) async {
     if (state.isEmpty) {
       throw SupabaseServiceException('Your cart is empty.');
     }
 
-    final order = await SupabaseService.instance.createOrder(toOrderRequest());
+    final order = await SupabaseService.instance.createOrder(
+      toOrderRequest(userName: userName, userPhone: userPhone),
+    );
     clear();
     return order;
   }
