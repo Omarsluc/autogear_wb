@@ -146,7 +146,7 @@ class CatalogSection extends StatelessWidget {
                 crossAxisCount: crossAxisCount,
                 crossAxisSpacing: 20,
                 mainAxisSpacing: 20,
-                childAspectRatio: width > 1200 ? 0.84 : (width > 700 ? 0.76 : 0.72),
+                childAspectRatio: width > 1200 ? 0.68 : (width > 700 ? 0.62 : 0.58),
               ),
               itemCount: parts.length,
               itemBuilder: (context, index) => PartCard(part: parts[index]),
@@ -375,24 +375,46 @@ class _PartCardState extends State<PartCard> {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: Text(part.name),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: Text(part.name, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
         content: SingleChildScrollView(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             mainAxisSize: MainAxisSize.min,
             children: [
-              Text(part.description),
+              if (part.resolvedImageCandidates.isNotEmpty) ...[
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(12),
+                  child: Container(
+                    height: 220,
+                    width: double.infinity,
+                    color: Colors.grey.shade50,
+                    child: MultiCandidateImage(
+                      candidates: part.resolvedImageCandidates,
+                      fallback: Container(
+                        color: AppColors.lightBlue,
+                        alignment: Alignment.center,
+                        child: Icon(_iconForSystem(part.system), color: AppColors.primary, size: 56),
+                      ),
+                      fit: BoxFit.contain,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 16),
+              ],
+              Text(part.description, style: const TextStyle(fontSize: 14, color: AppColors.textSecondary)),
               const SizedBox(height: 16),
               PartInfoRow(label: 'SKU', value: part.sku),
-              // PartInfoRow(label: 'OEM Number', value: part.oemNumber),
+              if (part.oemNumber.isNotEmpty)
+                PartInfoRow(label: 'OEM', value: part.oemNumber),
               PartInfoRow(label: 'Make', value: part.make),
               PartInfoRow(label: 'Model', value: part.model),
-              PartInfoRow(label: 'Years', value: part.years.join(', ')),
+              PartInfoRow(label: 'Years', value: part.years.isNotEmpty ? part.years.join(', ') : 'N/A'),
               PartInfoRow(label: 'System', value: part.system),
               PartInfoRow(label: 'Category', value: part.category),
-              const SizedBox(height: 10),
+              const SizedBox(height: 12),
               _buildPriceSection(context, part),
-              const SizedBox(height: 10),
+              const SizedBox(height: 12),
               if (part.country != null && part.country!.isNotEmpty)
                 PartInfoRow(label: 'Country', value: part.country!),
               if (part.englishNotes != null && part.englishNotes!.isNotEmpty)
@@ -412,7 +434,49 @@ class _PartCardState extends State<PartCard> {
               },
               icon: const Icon(Icons.add_shopping_cart, size: 18),
               label: Text('Add $_quantity to cart'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.primary,
+                foregroundColor: Colors.white,
+              ),
             ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildFallbackPlaceholder(AutoPart part) {
+    return Container(
+      decoration: BoxDecoration(
+        color: AppColors.lightBlue.withValues(alpha: 0.5),
+      ),
+      alignment: Alignment.center,
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              shape: BoxShape.circle,
+              boxShadow: [
+                BoxShadow(
+                  color: AppColors.primary.withValues(alpha: 0.1),
+                  blurRadius: 10,
+                  offset: const Offset(0, 4),
+                ),
+              ],
+            ),
+            child: Icon(_iconForSystem(part.system), color: AppColors.primary, size: 36),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            part.category,
+            style: const TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+              color: AppColors.primaryDark,
+            ),
+          ),
         ],
       ),
     );
@@ -468,11 +532,6 @@ class _PartCardState extends State<PartCard> {
         ),
       );
     }
-
-    // int? discountPercent;
-    // if (hasRetail && hasWholesale && part.retailPrice! > part.wholesalePrice!) {
-    //   discountPercent = (((part.retailPrice! - part.wholesalePrice!) / part.retailPrice!) * 100).round();
-    // }
 
     return Container(
       width: double.infinity,
@@ -537,8 +596,6 @@ class _PartCardState extends State<PartCard> {
     final inStockLabel = AppStrings.tr(context, 'in_stock');
     final outStockLabel = AppStrings.tr(context, 'out_of_stock');
     final skuLabel = AppStrings.tr(context, 'sku');
-    final vehicleLabel = AppStrings.tr(context, 'vehicle');
-    final yearsLabel = AppStrings.tr(context, 'years');
     final addToCartLabel = AppStrings.tr(context, 'add_to_cart');
 
     return BlocBuilder<CartCubit, CartState>(
@@ -555,224 +612,259 @@ class _PartCardState extends State<PartCard> {
 
         return Card(
           clipBehavior: Clip.antiAlias,
+          elevation: 2,
+          shadowColor: Colors.black.withValues(alpha: 0.08),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+            side: BorderSide(color: AppColors.border.withValues(alpha: 0.7)),
+          ),
           child: InkWell(
             onTap: () => _showPartDetail(context, part),
-            child: Padding(
-              padding: const EdgeInsets.all(20),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      if (part.pictureUrl != null && part.pictureUrl!.isNotEmpty)
-                        ClipRRect(
-                          borderRadius: BorderRadius.circular(10),
-                          child: Image.network(
-                            part.pictureUrl!,
-                            width: 48,
-                            height: 48,
-                            fit: BoxFit.cover,
-                            errorBuilder: (_, __, ___) => Container(
-                              padding: const EdgeInsets.all(12),
-                              decoration: BoxDecoration(
-                                color: AppColors.lightBlue,
-                                borderRadius: BorderRadius.circular(10),
-                              ),
-                              child: Icon(_iconForSystem(part.system), color: AppColors.primary, size: 24),
-                            ),
-                          ),
-                        )
-                      else
-                        Container(
-                          padding: const EdgeInsets.all(12),
-                          decoration: BoxDecoration(
-                            color: AppColors.lightBlue,
-                            borderRadius: BorderRadius.circular(10),
-                          ),
-                          child: Icon(_iconForSystem(part.system), color: AppColors.primary, size: 28),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // 1. Prominent Product Image Header from Supabase Storage
+                Stack(
+                  children: [
+                    Container(
+                      height: 170,
+                      width: double.infinity,
+                      decoration: BoxDecoration(
+                        color: Colors.grey.shade50,
+                        gradient: LinearGradient(
+                          colors: [
+                            Colors.grey.shade50,
+                            AppColors.lightBlue.withValues(alpha: 0.3),
+                          ],
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
                         ),
-                      const Spacer(),
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.end,
-                        children: [
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                            decoration: BoxDecoration(
-                              color: part.inStock ? Colors.green.shade50 : Colors.red.shade50,
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            child: Text(
-                              part.inStock ? inStockLabel : outStockLabel,
-                              style: TextStyle(
-                                fontSize: 11,
-                                fontWeight: FontWeight.w600,
-                                color: part.inStock ? Colors.green.shade700 : Colors.red.shade700,
-                              ),
-                            ),
-                          ),
-                          if (part.wholesalePrice != null || part.retailPrice != null) ...[
-                            const SizedBox(height: 6),
-                            Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                              decoration: BoxDecoration(
-                                color: AppColors.primary.withValues(alpha: 0.08),
-                                borderRadius: BorderRadius.circular(8),
-                                border: Border.all(color: AppColors.primary.withValues(alpha: 0.15)),
-                              ),
-                              child: Text(
-                                'EGP ${(part.wholesalePrice ?? part.retailPrice!).toStringAsFixed(2)}',
-                                style: const TextStyle(
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.w800,
-                                  color: AppColors.primary,
-                                ),
-                              ),
+                      ),
+                      child: MultiCandidateImage(
+                        candidates: part.resolvedImageCandidates,
+                        fallback: _buildFallbackPlaceholder(part),
+                        fit: BoxFit.contain,
+                      ),
+                    ),
+
+                    // Top Left System Pill
+                    Positioned(
+                      top: 10,
+                      left: 10,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withValues(alpha: 0.92),
+                          borderRadius: BorderRadius.circular(20),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withValues(alpha: 0.08),
+                              blurRadius: 4,
+                              offset: const Offset(0, 2),
                             ),
                           ],
-                        ],
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 16),
-                  Text(
-                    part.name,
-                    style: Theme.of(context).textTheme.titleMedium,
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  const SizedBox(height: 6),
-                  Text(part.description, maxLines: 2, overflow: TextOverflow.ellipsis),
-                  const SizedBox(height: 12),
-                  _buildPriceSection(context, part),
-                  const Spacer(),
-                  const Divider(height: 20),
-                  PartInfoRow(label: skuLabel, value: part.sku),
-                  if (part.oemNumber.isNotEmpty)
-                    // PartInfoRow(label: oemLabel, value: part.oemNumber),
-                  PartInfoRow(label: vehicleLabel, value: '${part.make} ${part.model}'),
-                  PartInfoRow(
-                    label: yearsLabel,
-                    value: part.years.isNotEmpty ? '${part.years.first}–${part.years.last}' : 'N/A',
-                  ),
-                  const SizedBox(height: 12),
-                  Row(
-                    children: [
-                      Container(
-                        height: 38,
-                        decoration: BoxDecoration(
-                          border: Border.all(color: AppColors.border),
-                          borderRadius: BorderRadius.circular(8),
                         ),
                         child: Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            IconButton(
-                              constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
-                              padding: EdgeInsets.zero,
-                              onPressed: !part.inStock
-                                  ? null
-                                  : () {
-                                      if (isInCart) {
-                                        context.read<CartCubit>().updateQuantity(
-                                              part,
-                                              cartItem!.quantity - 1,
-                                            );
-                                      } else {
-                                        if (_quantity > 1) {
-                                          setState(() => _quantity--);
-                                        }
-                                      }
-                                    },
-                              icon: const Icon(Icons.remove, size: 16),
-                              tooltip: 'Decrease quantity',
-                            ),
-                            Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 8),
-                              alignment: Alignment.center,
-                              child: Text(
-                                '$displayQuantity',
-                                style: const TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 14,
-                                ),
+                            Icon(_iconForSystem(part.system), size: 13, color: AppColors.primary),
+                            const SizedBox(width: 4),
+                            Text(
+                              part.system,
+                              style: const TextStyle(
+                                fontSize: 10,
+                                fontWeight: FontWeight.w600,
+                                color: AppColors.primaryDark,
                               ),
-                            ),
-                            IconButton(
-                              constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
-                              padding: EdgeInsets.zero,
-                              onPressed: !part.inStock
-                                  ? null
-                                  : () {
-                                      if (isInCart) {
-                                        context.read<CartCubit>().updateQuantity(
-                                              part,
-                                              cartItem!.quantity + 1,
-                                            );
-                                      } else {
-                                        setState(() => _quantity++);
-                                      }
-                                    },
-                              icon: const Icon(Icons.add, size: 16),
-                              tooltip: 'Increase quantity',
                             ),
                           ],
                         ),
                       ),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: OutlinedButton.icon(
-                          onPressed: part.inStock
-                              ? () {
-                                  if (isInCart) {
-                                    Navigator.push(
-                                      context,
-                                      MaterialPageRoute(builder: (_) => const CartScreen()),
-                                    );
-                                  } else {
-                                    _addToCart(context, part, _quantity);
-                                  }
-                                }
-                              : null,
-                          icon: Icon(
-                            isInCart ? Icons.shopping_cart : Icons.add_shopping_cart,
-                            size: 18,
-                          ),
-                          label: Text(
-                            isInCart ? 'In Cart (${cartItem.quantity})' : addToCartLabel,
-                            overflow: TextOverflow.ellipsis,
-                            maxLines: 1,
-                          ),
-                          style: OutlinedButton.styleFrom(
-                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 10),
-                            backgroundColor: isInCart ? AppColors.lightBlue : null,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 12),
-                  Row(
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    ),
+
+                    // Top Right Availability Pill
+                    Positioned(
+                      top: 10,
+                      right: 10,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                         decoration: BoxDecoration(
-                          color: AppColors.primary.withValues(alpha: 0.08),
-                          borderRadius: BorderRadius.circular(6),
+                          color: part.inStock ? Colors.green.shade600 : Colors.red.shade600,
+                          borderRadius: BorderRadius.circular(20),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withValues(alpha: 0.12),
+                              blurRadius: 4,
+                              offset: const Offset(0, 2),
+                            ),
+                          ],
                         ),
                         child: Text(
-                          part.system,
-                          style: const TextStyle(fontSize: 11, color: AppColors.primary),
+                          part.inStock ? inStockLabel : outStockLabel,
+                          style: const TextStyle(
+                            fontSize: 10,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white,
+                          ),
                         ),
                       ),
-                      const SizedBox(width: 8),
-                      Text(
-                        part.category,
-                        style: const TextStyle(fontSize: 11, color: AppColors.textSecondary),
-                      ),
-                    ],
+                    ),
+                  ],
+                ),
+
+                // 2. Card Content Body
+                Expanded(
+                  child: Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          part.name,
+                          style: const TextStyle(
+                            fontSize: 15,
+                            fontWeight: FontWeight.bold,
+                            color: AppColors.textPrimary,
+                            height: 1.2,
+                          ),
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        const SizedBox(height: 6),
+
+                        Row(
+                          children: [
+                            const Icon(Icons.directions_car_outlined, size: 14, color: AppColors.textSecondary),
+                            const SizedBox(width: 4),
+                            Expanded(
+                              child: Text(
+                                '${part.make} ${part.model}${part.years.isNotEmpty ? ' (${part.years.first}–${part.years.last})' : ''}',
+                                style: const TextStyle(fontSize: 12, color: AppColors.textSecondary),
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 4),
+                        Row(
+                          children: [
+                            const Icon(Icons.qr_code_outlined, size: 14, color: AppColors.textSecondary),
+                            const SizedBox(width: 4),
+                            Text(
+                              '$skuLabel: ${part.sku}',
+                              style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w500, color: AppColors.textSecondary),
+                            ),
+                          ],
+                        ),
+
+                        const Spacer(),
+
+                        _buildPriceSection(context, part),
+                        const SizedBox(height: 12),
+
+                        Row(
+                          children: [
+                            Container(
+                              height: 38,
+                              decoration: BoxDecoration(
+                                border: Border.all(color: AppColors.border),
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  IconButton(
+                                    constraints: const BoxConstraints(minWidth: 30, minHeight: 30),
+                                    padding: EdgeInsets.zero,
+                                    onPressed: !part.inStock
+                                        ? null
+                                        : () {
+                                            if (isInCart) {
+                                              context.read<CartCubit>().updateQuantity(
+                                                    part,
+                                                    cartItem!.quantity - 1,
+                                                  );
+                                            } else {
+                                              if (_quantity > 1) {
+                                                setState(() => _quantity--);
+                                              }
+                                            }
+                                          },
+                                    icon: const Icon(Icons.remove, size: 14),
+                                    tooltip: 'Decrease quantity',
+                                  ),
+                                  Padding(
+                                    padding: const EdgeInsets.symmetric(horizontal: 6),
+                                    child: Text(
+                                      '$displayQuantity',
+                                      style: const TextStyle(
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 13,
+                                      ),
+                                    ),
+                                  ),
+                                  IconButton(
+                                    constraints: const BoxConstraints(minWidth: 30, minHeight: 30),
+                                    padding: EdgeInsets.zero,
+                                    onPressed: !part.inStock
+                                        ? null
+                                        : () {
+                                            if (isInCart) {
+                                              context.read<CartCubit>().updateQuantity(
+                                                    part,
+                                                    cartItem!.quantity + 1,
+                                                  );
+                                            } else {
+                                              setState(() => _quantity++);
+                                            }
+                                          },
+                                    icon: const Icon(Icons.add, size: 14),
+                                    tooltip: 'Increase quantity',
+                                  ),
+                                ],
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: ElevatedButton.icon(
+                                onPressed: part.inStock
+                                    ? () {
+                                        if (isInCart) {
+                                          Navigator.push(
+                                            context,
+                                            MaterialPageRoute(builder: (_) => const CartScreen()),
+                                          );
+                                        } else {
+                                          _addToCart(context, part, _quantity);
+                                        }
+                                      }
+                                    : null,
+                                icon: Icon(
+                                  isInCart ? Icons.shopping_cart : Icons.add_shopping_cart,
+                                  size: 16,
+                                ),
+                                label: Text(
+                                  isInCart ? 'In Cart (${cartItem.quantity})' : addToCartLabel,
+                                  overflow: TextOverflow.ellipsis,
+                                  maxLines: 1,
+                                  style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
+                                ),
+                                style: ElevatedButton.styleFrom(
+                                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 10),
+                                  backgroundColor: isInCart ? AppColors.primaryDark : AppColors.primary,
+                                  foregroundColor: Colors.white,
+                                  elevation: 0,
+                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
                   ),
-                ],
-              ),
+                ),
+              ],
             ),
           ),
         );
@@ -1003,6 +1095,113 @@ class _SystemCard extends StatelessWidget {
           ),
         ),
       ),
+    );
+  }
+}
+
+class MultiCandidateImage extends StatefulWidget {
+  const MultiCandidateImage({
+    super.key,
+    required this.candidates,
+    required this.fallback,
+    this.height,
+    this.width,
+    this.fit = BoxFit.contain,
+  });
+
+  final List<String> candidates;
+  final Widget fallback;
+  final double? height;
+  final double? width;
+  final BoxFit fit;
+
+  static final Map<String, String> _workingUrlCache = {};
+
+  @override
+  State<MultiCandidateImage> createState() => _MultiCandidateImageState();
+}
+
+class _MultiCandidateImageState extends State<MultiCandidateImage> {
+  int _currentIndex = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    _checkCache();
+  }
+
+  @override
+  void didUpdateWidget(covariant MultiCandidateImage oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.candidates != widget.candidates) {
+      _currentIndex = 0;
+      _checkCache();
+    }
+  }
+
+  void _checkCache() {
+    if (widget.candidates.isEmpty) return;
+    final firstCandidate = widget.candidates.first;
+    if (MultiCandidateImage._workingUrlCache.containsKey(firstCandidate)) {
+      final cached = MultiCandidateImage._workingUrlCache[firstCandidate]!;
+      final idx = widget.candidates.indexOf(cached);
+      if (idx != -1) {
+        _currentIndex = idx;
+      }
+    }
+  }
+
+  void _nextCandidate() {
+    if (_currentIndex < widget.candidates.length - 1) {
+      setState(() {
+        _currentIndex++;
+      });
+    } else {
+      if (_currentIndex != widget.candidates.length) {
+        setState(() {
+          _currentIndex = widget.candidates.length;
+        });
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (widget.candidates.isEmpty || _currentIndex >= widget.candidates.length) {
+      return widget.fallback;
+    }
+
+    final currentUrl = widget.candidates[_currentIndex];
+
+    return Image.network(
+      currentUrl,
+      key: ValueKey(currentUrl),
+      width: widget.width,
+      height: widget.height,
+      fit: widget.fit,
+      frameBuilder: (context, child, frame, wasSynchronouslyLoaded) {
+        if (frame != null && widget.candidates.isNotEmpty) {
+          MultiCandidateImage._workingUrlCache[widget.candidates.first] = currentUrl;
+        }
+        return child;
+      },
+      loadingBuilder: (context, child, loadingProgress) {
+        if (loadingProgress == null) return child;
+        return Center(
+          child: CircularProgressIndicator(
+            strokeWidth: 2,
+            value: loadingProgress.expectedTotalBytes != null
+                ? loadingProgress.cumulativeBytesLoaded / loadingProgress.expectedTotalBytes!
+                : null,
+          ),
+        );
+      },
+      errorBuilder: (context, error, stackTrace) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted) _nextCandidate();
+        });
+        return widget.fallback;
+      },
     );
   }
 }

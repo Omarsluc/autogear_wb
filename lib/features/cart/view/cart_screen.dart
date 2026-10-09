@@ -259,44 +259,89 @@ class _CartItemTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final cartCubit = context.read<CartCubit>();
+    final imageUrl = item.part.resolvedImageUrl;
 
     return Card(
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+        side: BorderSide(color: AppColors.border.withValues(alpha: 0.6)),
+      ),
       child: Padding(
         padding: const EdgeInsets.all(16),
-        child: Column(
+        child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(item.part.name, style: Theme.of(context).textTheme.titleMedium),
-            const SizedBox(height: 8),
-            Text('SKU: ${item.part.sku}  •  OEM: ${item.part.oemNumber}'),
-            Text('${item.part.make} ${item.part.model}'),
-            const SizedBox(height: 12),
-            Row(
-              children: [
-                IconButton.outlined(
-                  onPressed: item.quantity > 1
-                      ? () => cartCubit.updateQuantity(item.part, item.quantity - 1)
-                      : null,
-                  icon: const Icon(Icons.remove),
-                ),
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 12),
-                  child: Text(
-                    '${item.quantity}',
-                    style: Theme.of(context).textTheme.titleMedium,
+            // Product Thumbnail
+            ClipRRect(
+              borderRadius: BorderRadius.circular(8),
+              child: Container(
+                width: 64,
+                height: 64,
+                color: Colors.grey.shade50,
+                child: imageUrl != null
+                    ? Image.network(
+                        imageUrl,
+                        fit: BoxFit.contain,
+                        errorBuilder: (_, __, ___) => Container(
+                          color: AppColors.lightBlue,
+                          child: const Icon(Icons.build, color: AppColors.primary, size: 24),
+                        ),
+                      )
+                    : Container(
+                        color: AppColors.lightBlue,
+                        child: const Icon(Icons.build, color: AppColors.primary, size: 24),
+                      ),
+              ),
+            ),
+            const SizedBox(width: 16),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(item.part.name, style: Theme.of(context).textTheme.titleMedium),
+                  const SizedBox(height: 4),
+                  Text(
+                    'SKU: ${item.part.sku}${item.part.oemNumber.isNotEmpty ? ' • OEM: ${item.part.oemNumber}' : ''}',
+                    style: const TextStyle(fontSize: 12, color: AppColors.textSecondary),
                   ),
-                ),
-                IconButton.outlined(
-                  onPressed: () => cartCubit.updateQuantity(item.part, item.quantity + 1),
-                  icon: const Icon(Icons.add),
-                ),
-                const Spacer(),
-                IconButton(
-                  tooltip: 'Remove',
-                  onPressed: () => cartCubit.removePart(item.part),
-                  icon: const Icon(Icons.delete_outline, color: Colors.red),
-                ),
-              ],
+                  Text(
+                    '${item.part.make} ${item.part.model}',
+                    style: const TextStyle(fontSize: 12, color: AppColors.textSecondary),
+                  ),
+                  const SizedBox(height: 12),
+                  Row(
+                    children: [
+                      IconButton.outlined(
+                        constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+                        padding: EdgeInsets.zero,
+                        onPressed: item.quantity > 1
+                            ? () => cartCubit.updateQuantity(item.part, item.quantity - 1)
+                            : null,
+                        icon: const Icon(Icons.remove, size: 16),
+                      ),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 12),
+                        child: Text(
+                          '${item.quantity}',
+                          style: Theme.of(context).textTheme.titleMedium,
+                        ),
+                      ),
+                      IconButton.outlined(
+                        constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+                        padding: EdgeInsets.zero,
+                        onPressed: () => cartCubit.updateQuantity(item.part, item.quantity + 1),
+                        icon: const Icon(Icons.add, size: 16),
+                      ),
+                      const Spacer(),
+                      IconButton(
+                        tooltip: 'Remove',
+                        onPressed: () => cartCubit.removePart(item.part),
+                        icon: const Icon(Icons.delete_outline, color: Colors.red),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
             ),
           ],
         ),
