@@ -82,19 +82,20 @@ class AppHeader extends StatelessWidget implements PreferredSizeWidget {
         ],
       ),
       actions: [
-        BlocSelector<LocaleCubit, Locale, bool>(
-          selector: (state) => state.languageCode == 'ar',
-          builder: (context, isAr) {
-            return TextButton.icon(
-              onPressed: () => context.read<LocaleCubit>().toggleLocale(),
-              icon: const Icon(Icons.language, color: Colors.white, size: 20),
-              label: Text(
-                isAr ? 'English' : 'العربية',
-                style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
-              ),
-            );
-          },
-        ),
+        if (!isMobile)
+          BlocSelector<LocaleCubit, Locale, bool>(
+            selector: (state) => state.languageCode == 'ar',
+            builder: (context, isAr) {
+              return TextButton.icon(
+                onPressed: () => context.read<LocaleCubit>().toggleLocale(),
+                icon: const Icon(Icons.language, color: Colors.white, size: 20),
+                label: Text(
+                  isAr ? 'English' : 'العربية',
+                  style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                ),
+              );
+            },
+          ),
         BlocSelector<CartCubit, CartState, int>(
           selector: (state) => state.itemCount,
           builder: (context, itemCount) {
@@ -243,27 +244,58 @@ class MobileDrawer extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               mainAxisAlignment: MainAxisAlignment.end,
               children: [
-                const Icon(Icons.settings, color: Colors.white, size: 40),
-                const SizedBox(height: 8),
-                Text(
-                  AppStrings.tr(context, 'app_title'),
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 24,
-                    fontWeight: FontWeight.w800,
-                    letterSpacing: 2,
-                  ),
-                ),
-                Text(
-                  AppStrings.tr(context, 'app_subtitle'),
-                  style: TextStyle(color: Colors.white.withValues(alpha: 0.8)),
+                Row(
+                  children: [
+                    const SizedBox(
+                      height: 44,
+                      width: 44,
+                      child: Image(image: AssetImage(Assets.imagesAgIcon)),
+                    ),
+                    const SizedBox(width: 12),
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          AppStrings.tr(context, 'app_title'),
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 22,
+                            fontWeight: FontWeight.w800,
+                            letterSpacing: 2,
+                          ),
+                        ),
+                        Text(
+                          AppStrings.tr(context, 'app_subtitle'),
+                          style: TextStyle(color: Colors.white.withValues(alpha: 0.85), fontSize: 11),
+                        ),
+                      ],
+                    ),
+                  ],
                 ),
               ],
             ),
           ),
           ListTile(
-            leading: const Icon(Icons.language, color: AppColors.primary),
-            title: Text(isAr ? 'English' : 'العربية'),
+            leading: const Icon(Icons.language, color: AppColors.primary, size: 24),
+            title: Text(
+              isAr ? 'English' : 'العربية',
+              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+            ),
+            subtitle: Text(
+              isAr ? 'تغيير اللغة' : 'Change Language',
+              style: const TextStyle(fontSize: 12, color: AppColors.textSecondary),
+            ),
+            trailing: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+              decoration: BoxDecoration(
+                color: AppColors.primary,
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Text(
+                isAr ? 'EN' : 'عربي',
+                style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 12),
+              ),
+            ),
             onTap: () => context.read<LocaleCubit>().toggleLocale(),
           ),
           const Divider(),

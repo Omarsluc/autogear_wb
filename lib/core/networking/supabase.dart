@@ -334,6 +334,90 @@ class SupabaseService {
     return sortedList;
   }
 
+  List<String> _cleanAndNormalizeSystems(List<String> rawSystems) {
+    final Map<String, String> canonical = {};
+
+    for (final raw in rawSystems) {
+      if (raw.trim().isEmpty) continue;
+
+      final tokens = raw.split(',');
+      for (final token in tokens) {
+        final cleaned = token.trim();
+        if (cleaned.isEmpty) continue;
+
+        final lower = cleaned.toLowerCase();
+        // Unify brake/braking system into standard 'Braking System'
+        if (lower == 'brake system' || lower == 'braking system') {
+          canonical['braking system'] = 'Braking System';
+          continue;
+        }
+
+        final titleCased = lower
+            .split(' ')
+            .map((w) => w.isNotEmpty ? (w[0].toUpperCase() + w.substring(1)) : '')
+            .join(' ');
+
+        if (!canonical.containsKey(lower)) {
+          canonical[lower] = titleCased;
+        }
+      }
+    }
+
+    final sortedList = canonical.values.toList()
+      ..sort((a, b) => a.toLowerCase().compareTo(b.toLowerCase()));
+    return sortedList;
+  }
+
+  List<String> _cleanAndNormalizePartNames(List<String> rawPartNames) {
+    final Map<String, String> canonical = {};
+
+    for (final raw in rawPartNames) {
+      final cleaned = raw.trim();
+      if (cleaned.isEmpty) continue;
+
+      final lower = cleaned.toLowerCase();
+
+      // Normalize common synonyms, typos, and abbreviations in parts dataset
+      if (lower == 'oxygn sensor' || lower == 'oxygen sensor') {
+        canonical['oxygen sensor'] = 'Oxygen Sensor';
+      } else if (lower == 'water temperature sensor' || lower == 'coolant temperature sensor') {
+        canonical['water temperature sensor'] = 'Water Temperature Sensor';
+      } else if (lower == 'abs sensor') {
+        canonical['abs sensor'] = 'ABS Sensor';
+      } else if (lower == 'vvt sensor') {
+        canonical['vvt sensor'] = 'VVT Sensor';
+      } else if (lower == 'map sensor' || lower == 'manifold absolute pressure sensor') {
+        canonical['map sensor'] = 'MAP Sensor';
+      } else if (lower == 'tpms sensor') {
+        canonical['tpms sensor'] = 'TPMS Sensor';
+      } else if (lower == 'pcv') {
+        canonical['pcv'] = 'PCV';
+      } else if (lower == 'cmc sensor') {
+        canonical['cmc sensor'] = 'CMC Sensor';
+      } else if (lower == 'dhb sensor') {
+        canonical['dhb sensor'] = 'DHB Sensor';
+      } else if (lower == 'speed sensor') {
+        canonical['speed sensor'] = 'Speed Sensor';
+      } else if (lower == 'alternator regulator' || lower == 'alternator voltage regulator') {
+        canonical['alternator regulator'] = 'Alternator Regulator';
+      } else if (lower == 'oil pressure sensor') {
+        canonical['oil pressure sensor'] = 'Oil Pressure Sensor';
+      } else {
+        if (!canonical.containsKey(lower)) {
+          final titleCased = lower
+              .split(' ')
+              .map((w) => w.isNotEmpty ? (w[0].toUpperCase() + w.substring(1)) : '')
+              .join(' ');
+          canonical[lower] = titleCased;
+        }
+      }
+    }
+
+    final sortedList = canonical.values.toList()
+      ..sort((a, b) => a.toLowerCase().compareTo(b.toLowerCase()));
+    return sortedList;
+  }
+
   Future<List<String>> fetchMakes() async {
     final rawMakes = <String>[];
 
@@ -377,21 +461,17 @@ class SupabaseService {
       }
     } catch (_) {}
 
-    if (rawModels.isEmpty) {
-      try {
-        var query = client.from(SupabaseTables.parts).select('model');
-        if (make != null && make.isNotEmpty) {
-          query = query.ilike('make', '%$make%');
-        }
-        final List<dynamic> data = await query;
-        for (final row in data) {
-          final m = (row as Map<String, dynamic>)['model'] as String?;
-          if (m != null && m.isNotEmpty) rawModels.add(m);
-        }
-      } on PostgrestException catch (e) {
-        throw SupabaseServiceException(e.message, cause: e);
+    try {
+      var query = client.from(SupabaseTables.parts).select('model');
+      if (make != null && make.isNotEmpty) {
+        query = query.ilike('make', '%$make%');
       }
-    }
+      final List<dynamic> data = await query;
+      for (final row in data) {
+        final m = (row as Map<String, dynamic>)['model'] as String?;
+        if (m != null && m.isNotEmpty) rawModels.add(m);
+      }
+    } catch (_) {}
 
     return _cleanAndNormalizeTokens(rawModels);
   }
@@ -468,7 +548,7 @@ class SupabaseService {
       }
     }
 
-    return _cleanAndNormalizeTokens(rawSystems);
+    return _cleanAndNormalizeSystems(rawSystems);
   }
 
   Future<List<String>> fetchPartNames({
@@ -505,7 +585,15 @@ class SupabaseService {
         if (make != null && make.isNotEmpty) query = query.ilike('make', '%$make%');
         if (model != null && model.isNotEmpty) query = query.ilike('model', '%$model%');
         if (year != null) query = query.contains('year', [year]);
-        if (system != null && system.isNotEmpty) query = query.eq('system', system);
+        if (system != null && system.trim().isNotEmpty) {
+          final cleanSys = system.trim().toLowerCase();
+          final sysKeyword = cleanSys.replaceAll(RegExp(r'\s+system$'), '').trim();
+          if (sysKeyword == 'brake' || sysKeyword == 'braking') {
+            query = query.or('system.ilike.%braking%,system.ilike.%brake%');
+          } else {
+            query = query.ilike('system', '%$sysKeyword%');
+          }
+        }
         final List<dynamic> data = await query;
         for (final row in data) {
           final m = row as Map<String, dynamic>;
@@ -517,7 +605,7 @@ class SupabaseService {
       }
     }
 
-    return _cleanAndNormalizeTokens(rawPartNames);
+    return _cleanAndNormalizePartNames(rawPartNames);
   }
 
   Future<List<PartRecord>> searchParts({
@@ -552,25 +640,56 @@ class SupabaseService {
     try {
       var query = client.from(SupabaseTables.parts).select();
 
-      if (make != null && make.isNotEmpty) {
-        query = query.ilike('make', '%$make%');
+      if (make != null && make.trim().isNotEmpty) {
+        final m = make.trim();
+        final mLower = m.toLowerCase();
+        if (mLower == 'kia') {
+          query = query.or('make.ilike.%kia%,english_notes.ilike.%kia%,arabic_notes.ilike.%كيا%');
+        } else if (mLower == 'hyundai') {
+          query = query.or('make.ilike.%hyundai%,english_notes.ilike.%hyundai%,arabic_notes.ilike.%هيونداي%,arabic_notes.ilike.%هيونداى%');
+        } else {
+          query = query.or('make.ilike.%$m%,english_notes.ilike.%$m%');
+        }
       }
-      if (model != null && model.isNotEmpty) {
-        query = query.ilike('model', '%$model%');
+      if (model != null && model.trim().isNotEmpty) {
+        final mod = model.trim();
+        query = query.or('model.ilike.%$mod%,english_notes.ilike.%$mod%,arabic_notes.ilike.%$mod%');
       }
       if (year != null) {
-        query = query.contains('year', [year]);
+        query = query.or('year.cs.{$year},english_notes.ilike.%$year%,arabic_notes.ilike.%$year%');
       }
-      if (system != null && system.isNotEmpty) {
-        query = query.eq('system', system);
+      if (system != null && system.trim().isNotEmpty) {
+        final cleanSys = system.trim().toLowerCase();
+        final sysKeyword = cleanSys.replaceAll(RegExp(r'\s+system$'), '').trim();
+        if (sysKeyword == 'brake' || sysKeyword == 'braking') {
+          query = query.or('system.ilike.%braking%,system.ilike.%brake%');
+        } else {
+          query = query.ilike('system', '%$sysKeyword%');
+        }
       }
-      if (partName != null && partName.isNotEmpty) {
-        query = query.eq('item_type', partName);
+      if (partName != null && partName.trim().isNotEmpty) {
+        final p = partName.trim();
+        final pLower = p.toLowerCase();
+        if (pLower.contains('oxygen') || pLower.contains('oxygn')) {
+          query = query.or('item_type.ilike.%oxygen%,item_type.ilike.%oxygn%');
+        } else if (pLower.contains('water temperature') || pLower.contains('coolant temperature')) {
+          query = query.or('item_type.ilike.%water temperature%,item_type.ilike.%coolant temperature%');
+        } else if (pLower.contains('alternator')) {
+          query = query.ilike('item_type', '%alternator%');
+        } else if (pLower.contains('manifold absolute pressure') || pLower == 'map sensor') {
+          query = query.or('item_type.ilike.%manifold absolute pressure%,item_type.ilike.%map sensor%');
+        } else if (pLower == 'vvt sensor') {
+          query = query.ilike('item_type', '%vvt%');
+        } else {
+          query = query.ilike('item_type', '%$p%');
+        }
       }
 
       final q = searchQuery?.trim();
       if (q != null && q.isNotEmpty) {
         query = query.or(
+          'make.ilike.%$q%,'
+          'model.ilike.%$q%,'
           'oem.ilike.%$q%,'
           'sn.ilike.%$q%,'
           'item_type.ilike.%$q%,'
@@ -584,8 +703,45 @@ class SupabaseService {
           .cast<Map<String, dynamic>>()
           .map(PartRecord.fromJson)
           .toList();
-    } on PostgrestException catch (e) {
-      throw SupabaseServiceException(e.message, cause: e);
+    } catch (_) {
+      try {
+        var query = client.from(SupabaseTables.parts).select();
+        if (make != null && make.trim().isNotEmpty) {
+          query = query.ilike('make', '%${make.trim()}%');
+        }
+        if (model != null && model.trim().isNotEmpty) {
+          query = query.ilike('model', '%${model.trim()}%');
+        }
+        if (system != null && system.trim().isNotEmpty) {
+          final cleanSys = system.trim().toLowerCase();
+          final sysKeyword = cleanSys.replaceAll(RegExp(r'\s+system$'), '').trim();
+          if (sysKeyword == 'brake' || sysKeyword == 'braking') {
+            query = query.or('system.ilike.%braking%,system.ilike.%brake%');
+          } else {
+            query = query.ilike('system', '%$sysKeyword%');
+          }
+        }
+        if (partName != null && partName.trim().isNotEmpty) {
+          final p = partName.trim();
+          final pLower = p.toLowerCase();
+          if (pLower.contains('oxygen') || pLower.contains('oxygn')) {
+            query = query.or('item_type.ilike.%oxygen%,item_type.ilike.%oxygn%');
+          } else if (pLower.contains('water temperature') || pLower.contains('coolant temperature')) {
+            query = query.or('item_type.ilike.%water temperature%,item_type.ilike.%coolant temperature%');
+          } else if (pLower.contains('alternator')) {
+            query = query.ilike('item_type', '%alternator%');
+          } else {
+            query = query.ilike('item_type', '%$p%');
+          }
+        }
+        final List<dynamic> data = await query.order('created_at', ascending: false);
+        return data
+            .cast<Map<String, dynamic>>()
+            .map(PartRecord.fromJson)
+            .toList();
+      } catch (_) {
+        return [];
+      }
     }
   }
 

@@ -66,9 +66,6 @@ class CartCubit extends Cubit<CartState> {
       final item = state.items[i];
       buffer.writeln('${i + 1}. Part Name: ${item.part.name}');
       buffer.writeln('   SN Number: ${item.part.sku}');
-      if (item.part.oemNumber.isNotEmpty) {
-        buffer.writeln('   OEM: ${item.part.oemNumber}');
-      }
       buffer.writeln('   Quantity: ${item.quantity}');
       buffer.writeln();
     }

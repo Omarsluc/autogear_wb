@@ -336,20 +336,15 @@ class _PartCardState extends State<PartCard> {
   int _quantity = 1;
 
   IconData _iconForSystem(String system) {
-    switch (system) {
-      case 'Engine System':
-        return Icons.settings;
-      case 'Electrical System':
-        return Icons.electric_bolt;
-      case 'Braking System':
-        return Icons.disc_full;
-      case 'Suspension & Steering System':
-        return Icons.tire_repair;
-      case 'Cooling System':
-        return Icons.ac_unit;
-      default:
-        return Icons.build;
-    }
+    final s = system.toLowerCase();
+    if (s.contains('engine')) return Icons.settings;
+    if (s.contains('electric')) return Icons.electric_bolt;
+    if (s.contains('brak')) return Icons.disc_full;
+    if (s.contains('suspension')) return Icons.tire_repair;
+    if (s.contains('cool')) return Icons.ac_unit;
+    if (s.contains('ignit')) return Icons.local_fire_department;
+    if (s.contains('exhaust')) return Icons.air;
+    return Icons.build;
   }
 
   void _addToCart(BuildContext context, AutoPart part, int quantity) {
@@ -905,13 +900,15 @@ class PartInfoRow extends StatelessWidget {
 }
 
 class MakesSection extends StatelessWidget {
-  const MakesSection({super.key, required this.onMakeSelected});
+  const MakesSection({super.key, required this.onMakeSelected, this.makesList});
 
   final ValueChanged<String> onMakeSelected;
+  final List<String>? makesList;
 
   @override
   Widget build(BuildContext context) {
     final width = MediaQuery.sizeOf(context).width;
+    final itemsToDisplay = (makesList != null && makesList!.isNotEmpty) ? makesList! : makes;
 
     return Container(
       color: Colors.white,
@@ -929,7 +926,7 @@ class MakesSection extends StatelessWidget {
           Wrap(
             spacing: 12,
             runSpacing: 12,
-            children: makes.map((make) {
+            children: itemsToDisplay.map((make) {
               return InkWell(
                 onTap: () => onMakeSelected(make),
                 borderRadius: BorderRadius.circular(10),
@@ -970,14 +967,17 @@ class SystemsSection extends StatelessWidget {
     super.key,
     required this.onSystemSelected,
     required this.onCategorySelected,
+    this.systemsList,
   });
 
   final ValueChanged<String> onSystemSelected;
   final void Function(String system, String category) onCategorySelected;
+  final List<String>? systemsList;
 
   @override
   Widget build(BuildContext context) {
     final width = MediaQuery.sizeOf(context).width;
+    final itemsToDisplay = (systemsList != null && systemsList!.isNotEmpty) ? systemsList! : systems;
 
     return Container(
       color: AppColors.background,
@@ -1000,8 +1000,19 @@ class SystemsSection extends StatelessWidget {
               return Wrap(
                 spacing: 16,
                 runSpacing: 16,
-                children: systems.map((system) {
-                  final categories = categoriesBySystem[system] ?? [];
+                children: itemsToDisplay.map((system) {
+                  // Look up categories directly or match by system keyword
+                  List<String> categories = categoriesBySystem[system] ?? [];
+                  if (categories.isEmpty) {
+                    final sysLower = system.toLowerCase();
+                    for (final entry in categoriesBySystem.entries) {
+                      if (sysLower.contains(entry.key.toLowerCase().replaceAll(' system', ''))) {
+                        categories = entry.value;
+                        break;
+                      }
+                    }
+                  }
+
                   return SizedBox(
                     width: cardWidth > 400 ? (constraints.maxWidth - 32) / 2 : cardWidth,
                     child: _SystemCard(
@@ -1035,20 +1046,15 @@ class _SystemCard extends StatelessWidget {
   final ValueChanged<String> onCategoryTap;
 
   IconData get _icon {
-    switch (system) {
-      case 'Engine System':
-        return Icons.settings;
-      case 'Electrical System':
-        return Icons.electric_bolt;
-      case 'Braking System':
-        return Icons.disc_full;
-      case 'Suspension & Steering System':
-        return Icons.tire_repair;
-      case 'Cooling System':
-        return Icons.ac_unit;
-      default:
-        return Icons.build;
-    }
+    final s = system.toLowerCase();
+    if (s.contains('engine')) return Icons.settings;
+    if (s.contains('electric')) return Icons.electric_bolt;
+    if (s.contains('brak')) return Icons.disc_full;
+    if (s.contains('suspension')) return Icons.tire_repair;
+    if (s.contains('cool')) return Icons.ac_unit;
+    if (s.contains('ignit')) return Icons.local_fire_department;
+    if (s.contains('exhaust')) return Icons.air;
+    return Icons.build;
   }
 
   @override

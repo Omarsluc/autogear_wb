@@ -68,6 +68,8 @@ class AppStrings {
     'braking_system': 'Braking System',
     'suspension_system': 'Suspension & Steering System',
     'cooling_system': 'Cooling System',
+    'ignition_system': 'Ignition System',
+    'exhaust_system': 'Exhaust System',
 
     // Stats
     'stat_skus': 'SKUs of Auto Parts',
@@ -157,6 +159,8 @@ class AppStrings {
     'braking_system': 'نظام الفرامل',
     'suspension_system': 'نظام التعليق والتوجيه',
     'cooling_system': 'نظام التبريد',
+    'ignition_system': 'نظام الإشعال',
+    'exhaust_system': 'نظام العادم',
 
     // Stats
     'stat_skus': 'صنف من قطع الغيار',

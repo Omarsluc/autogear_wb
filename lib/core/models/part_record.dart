@@ -94,6 +94,10 @@ class PartRecord {
       if (p != null) parsedYears.add(p);
     }
 
+    if (parsedYears.isEmpty) {
+      parsedYears.addAll(_extractYearsFromNotes(englishNotesVal, arabicNotesVal));
+    }
+
     final compatJson = json['part_compatibility'];
 
     return PartRecord(
@@ -145,11 +149,31 @@ class PartRecord {
       };
 
   AutoPart toAutoPart() {
-    final displayName = (itemType?.isNotEmpty == true)
+    String rawName = (itemType?.isNotEmpty == true)
         ? itemType!
         : ((system?.isNotEmpty == true)
             ? system!
             : (oem?.isNotEmpty == true ? 'OEM $oem' : 'Auto Part'));
+
+    final nameLower = rawName.trim().toLowerCase();
+    String displayName = rawName.trim();
+    if (nameLower == 'oxygn sensor' || nameLower == 'oxygen sensor') {
+      displayName = 'Oxygen Sensor';
+    } else if (nameLower == 'water temperature sensor' || nameLower == 'coolant temperature sensor') {
+      displayName = 'Water Temperature Sensor';
+    } else if (nameLower == 'abs sensor') {
+      displayName = 'ABS Sensor';
+    } else if (nameLower == 'vvt sensor') {
+      displayName = 'VVT Sensor';
+    } else if (nameLower == 'speed sensor') {
+      displayName = 'Speed Sensor';
+    } else if (nameLower == 'map sensor' || nameLower == 'manifold absolute pressure sensor') {
+      displayName = 'MAP Sensor';
+    } else if (nameLower == 'oil pressure sensor') {
+      displayName = 'Oil Pressure Sensor';
+    } else if (nameLower == 'alternator regulator' || nameLower == 'alternator voltage regulator') {
+      displayName = 'Alternator Regulator';
+    }
 
     final displaySku = (sn?.isNotEmpty == true)
         ? sn!
@@ -178,8 +202,29 @@ class PartRecord {
       }
     }
 
-    final displaySystem = system?.isNotEmpty == true ? system! : 'General';
-    final displayCategory = itemType?.isNotEmpty == true ? itemType! : displaySystem;
+    String rawSystem = system?.isNotEmpty == true ? system! : 'General';
+    final sysLower = rawSystem.toLowerCase();
+    String displaySystem;
+    if (sysLower.contains('brak')) {
+      displaySystem = 'Braking System';
+    } else if (sysLower.contains('engine')) {
+      displaySystem = 'Engine System';
+    } else if (sysLower.contains('electric')) {
+      displaySystem = 'Electrical System';
+    } else if (sysLower.contains('cool')) {
+      displaySystem = 'Cooling System';
+    } else if (sysLower.contains('ignit')) {
+      displaySystem = 'Ignition System';
+    } else if (sysLower.contains('exhaust')) {
+      displaySystem = 'Exhaust System';
+    } else {
+      displaySystem = rawSystem
+          .split(' ')
+          .map((w) => w.isNotEmpty ? (w[0].toUpperCase() + w.substring(1)) : '')
+          .join(' ');
+    }
+
+    final displayCategory = displayName.isNotEmpty ? displayName : displaySystem;
     final displayDesc = englishNotes?.isNotEmpty == true
         ? englishNotes!
         : (arabicNotes?.isNotEmpty == true
@@ -205,6 +250,48 @@ class PartRecord {
       englishNotes: englishNotes,
     );
   }
+}
+
+List<int> _extractYearsFromNotes(String? en, String? ar) {
+  final text = '${en ?? ''} ${ar ?? ''}';
+  if (text.trim().isEmpty) return const [];
+
+  final yearSet = <int>{};
+
+  // 1. Match year ranges like 2004-2011, 2004/07-2007/01, 2005–2013, 1994-2000
+  final rangeRegex = RegExp(r'(19\d{2}|20\d{2})(?:/\d{2})?\s*[-–—]\s*(19\d{2}|20\d{2})(?:/\d{2})?');
+  for (final match in rangeRegex.allMatches(text)) {
+    final start = int.tryParse(match.group(1) ?? '');
+    final end = int.tryParse(match.group(2) ?? '');
+    if (start != null && end != null && start <= end && end - start <= 25) {
+      for (var y = start; y <= end; y++) {
+        yearSet.add(y);
+      }
+    }
+  }
+
+  // 2. Match open-ended year ranges like 1997-
+  final openRangeRegex = RegExp(r'(19\d{2}|20\d{2})\s*[-–—]\s*(?!\d)');
+  for (final match in openRangeRegex.allMatches(text)) {
+    final start = int.tryParse(match.group(1) ?? '');
+    if (start != null && start >= 1970) {
+      final maxYear = (start + 10 < 2026) ? start + 10 : 2026;
+      for (var y = start; y <= maxYear; y++) {
+        yearSet.add(y);
+      }
+    }
+  }
+
+  // 3. Match standalone 4-digit years like 2006
+  final singleYearRegex = RegExp(r'\b(19\d{2}|20\d{2})\b');
+  for (final match in singleYearRegex.allMatches(text)) {
+    final y = int.tryParse(match.group(1) ?? '');
+    if (y != null && y >= 1970 && y <= 2026) {
+      yearSet.add(y);
+    }
+  }
+
+  return yearSet.toList()..sort();
 }
 
 

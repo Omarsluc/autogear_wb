@@ -25,56 +25,69 @@ const makes = [
 ];
 
 const systems = [
-  'Engine System',
   'Electrical System',
+  'Engine System',
   'Braking System',
-  'Suspension & Steering System',
   'Cooling System',
+  'Ignition System',
+  'Exhaust System',
 ];
 
 const categoriesBySystem = <String, List<String>>{
-  'Engine System': [
-    'Fuel Injector',
-    'Fuel Pump',
-    'Ignition Coil',
-    'Spark Plug',
-    'Throttle Body',
-    'Engine Mount',
-    'IAC Valve',
-    'VVT Solenoids',
-  ],
   'Electrical System': [
-    'Alternator',
-    'Starter Motor',
     'Oxygen Sensor',
-    'ABS Sensor',
-    'Crankshaft Sensor',
-    'Power Window Switch',
     'Ignition Coil',
+    'ABS Sensor',
+    'Brake Light Switch',
+    'Crankshaft Position Sensor',
+    'Camshaft Position Sensor',
+    'Speed Sensor',
+    'Throttle Position Sensor',
+    'Idle Air Control Valve',
+    'Mass Air Flow Sensor',
+    'VVT Sensor',
+    'Water Temperature Sensor',
+    'AC Pressure Sensor',
+    'Alternator Regulator',
+  ],
+  'Engine System': [
+    'Oxygen Sensor',
+    'Ignition Coil',
+    'Valve Cover',
+    'Valve Cover Gasket',
+    'Manifold Gasket Set',
+    'Crankshaft Position Sensor',
+    'Camshaft Position Sensor',
+    'Throttle Position Sensor',
+    'Idle Air Control Valve',
+    'Mass Air Flow Sensor',
+    'VVT Sensor',
+    'Thermostat',
+    'PCV',
+    'Oil Pressure Sensor',
   ],
   'Braking System': [
-    'Brake Pad Set',
-    'Brake Disc',
-    'Brake Caliper',
     'ABS Sensor',
-    'Brake Master Cylinder',
-  ],
-  'Suspension & Steering System': [
-    'Control Arm',
-    'Shock Absorber',
-    'Ball Joint',
-    'Tie Rod End',
-    'Wheel Bearing',
-    'CV Axle Shaft',
-    'Strut Mount',
+    'Brake Light Switch',
+    'Brake Pedal Sensor',
+    'Clutch Master Cylinder',
   ],
   'Cooling System': [
-    'Water Pump',
-    'Radiator',
+    'Water Temperature Sensor',
     'Thermostat',
-    'A/C Compressor',
-    'Radiator Fan Assy',
-    'Blower Motor',
+    'Radiator Fan',
+    'Temperature Switch',
+    'AC Pressure Sensor',
+  ],
+  'Ignition System': [
+    'Ignition Coil',
+    'Ignition Switch',
+    'Ignition Wire',
+    'Spark Plug Wires',
+  ],
+  'Exhaust System': [
+    'Oxygen Sensor',
+    'Exhaust Manifold',
   ],
 };
 
@@ -627,37 +640,37 @@ final catalogParts = <AutoPart>[
   ),
 ];
 
-List<AutoPart> filterParts(CatalogFilters filters) {
-  final query = filters.searchQuery.trim().toLowerCase();
+List<AutoPart> filterParts(CatalogFilters filters, [List<AutoPart>? sourceParts]) {
+  final partsToFilter = sourceParts ?? catalogParts;
 
-  return catalogParts.where((part) {
-    if (filters.make != null &&
-        !part.make.toLowerCase().contains(filters.make!.toLowerCase())) {
-      return false;
-    }
-    if (filters.model != null &&
-        !part.model.toLowerCase().contains(filters.model!.toLowerCase())) {
-      return false;
-    }
+  return partsToFilter.where((part) {
+    if (!part.matchesMake(filters.make)) return false;
+    if (!part.matchesModel(filters.model)) return false;
     if (!part.matchesYear(filters.year)) return false;
-    if (filters.system != null && part.system != filters.system) return false;
-    if (filters.category != null && part.category != filters.category) return false;
-    if (query.isNotEmpty) {
-      if (!part.searchHaystack.contains(query)) return false;
+    if (!part.matchesSystem(filters.system)) return false;
+    if (!part.matchesCategory(filters.category)) return false;
+    if (filters.searchQuery.trim().isNotEmpty) {
+      if (!part.matchesSearch(filters.searchQuery)) return false;
     }
     return true;
   }).toList();
 }
 
 List<String> availableModels(String? make) {
-  if (make == null || make.isEmpty) {
+  if (make == null || make.trim().isEmpty) {
     final all = <String>{};
     for (final list in modelsByMake.values) {
       all.addAll(list);
     }
     return all.toList()..sort();
   }
-  return modelsByMake[make] ?? [];
+  final clean = make.trim().toLowerCase();
+  for (final entry in modelsByMake.entries) {
+    if (entry.key.toLowerCase() == clean) {
+      return entry.value;
+    }
+  }
+  return [];
 }
 
 List<String> availableCategories(String? system) {
@@ -675,8 +688,7 @@ List<String> availableCategoriesForParts(List<AutoPart> parts) {
   return parts.map((p) => p.category).toSet().toList()..sort();
 }
 
-/// Central catalog repository for querying the Supabase `parts` table
-/// with fallback to local parts data.
+/// Central catalog repository for querying the Supabase `parts` table.
 class CatalogRepository {
   const CatalogRepository();
 
@@ -691,42 +703,40 @@ class CatalogRepository {
           partName: filters.category,
           searchQuery: filters.searchQuery,
         );
-        if (records.isNotEmpty) {
-          return records.map((r) => r.toAutoPart()).toList();
-        }
+        return records.map((r) => r.toAutoPart()).toList();
       } catch (_) {}
     }
-    return filterParts(filters);
+    return const [];
   }
 
   Future<List<String>> fetchMakes() async {
     if (SupabaseService.isInitialized) {
       try {
         final supaMakes = await SupabaseService.instance.fetchMakes();
-        if (supaMakes.isNotEmpty) return supaMakes;
+        return supaMakes;
       } catch (_) {}
     }
-    return makes;
+    return const [];
   }
 
   Future<List<String>> fetchModels(String? make) async {
     if (SupabaseService.isInitialized) {
       try {
         final supaModels = await SupabaseService.instance.fetchModels(make: make);
-        if (supaModels.isNotEmpty) return supaModels;
+        return supaModels;
       } catch (_) {}
     }
-    return availableModels(make);
+    return const [];
   }
 
   Future<List<int>> fetchYears({String? make, String? model}) async {
     if (SupabaseService.isInitialized) {
       try {
         final supaYears = await SupabaseService.instance.fetchYears(make: make, model: model);
-        if (supaYears.isNotEmpty) return supaYears;
+        return supaYears;
       } catch (_) {}
     }
-    return years;
+    return const [];
   }
 
   Future<List<String>> fetchSystems({String? make, String? model, int? year}) async {
@@ -737,10 +747,10 @@ class CatalogRepository {
           model: model,
           year: year,
         );
-        if (supaSystems.isNotEmpty) return supaSystems;
+        return supaSystems;
       } catch (_) {}
     }
-    return systems;
+    return const [];
   }
 
   Future<List<String>> fetchPartNames({
@@ -757,9 +767,9 @@ class CatalogRepository {
           year: year,
           system: system,
         );
-        if (supaPartNames.isNotEmpty) return supaPartNames;
+        return supaPartNames;
       } catch (_) {}
     }
-    return availableCategories(system);
+    return const [];
   }
 }

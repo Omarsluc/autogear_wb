@@ -1,7 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import '../../../../core/data/catalog_repository.dart';
 import '../../../../core/localization/app_strings.dart';
 import '../../../../core/models/auto_part.dart';
 import '../../../../core/theme/app_theme.dart';
@@ -23,6 +22,7 @@ class CatalogScreen extends StatefulWidget {
 class _CatalogScreenState extends State<CatalogScreen> {
   static const int _pageSize = 12;
   int _currentPage = 1;
+  final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
 
   @override
   void initState() {
@@ -45,8 +45,17 @@ class _CatalogScreenState extends State<CatalogScreen> {
     final isMobile = width < 900;
 
     return Scaffold(
+      key: _scaffoldKey,
+      endDrawer: isMobile
+          ? MobileDrawer(
+              onNavigate: (section) {
+                Navigator.pop(context);
+              },
+            )
+          : null,
       appBar: AppHeader(
         isMobile: isMobile,
+        drawerKey: _scaffoldKey,
         onNavigate: (section) {
           Navigator.pop(context);
         },
@@ -222,15 +231,11 @@ class _CatalogFilterBarState extends State<_CatalogFilterBar> {
 
     return BlocBuilder<HomeCubit, HomeState>(
       builder: (context, state) {
-        final makesList = state.availableMakes.isNotEmpty ? state.availableMakes : makes;
-        final modelsList = state.availableModels.isNotEmpty
-            ? state.availableModels
-            : availableModels(widget.filters.make);
-        final yearsList = state.availableYears.isNotEmpty ? state.availableYears : years;
-        final systemsList = state.availableSystems.isNotEmpty ? state.availableSystems : systems;
-        final partNamesList = state.availablePartNames.isNotEmpty
-            ? state.availablePartNames
-            : availableCategories(widget.filters.system);
+        final makesList = state.availableMakes;
+        final modelsList = state.availableModels;
+        final yearsList = state.availableYears;
+        final systemsList = state.availableSystems;
+        final partNamesList = state.availablePartNames;
         return Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
@@ -268,6 +273,8 @@ class _CatalogFilterBarState extends State<_CatalogFilterBar> {
                     widget.filters.copyWith(
                       make: v,
                       clearMake: v == null,
+                      clearModel: true,
+                      clearCategory: true,
                     ),
                   ),
                 ),
@@ -308,6 +315,7 @@ class _CatalogFilterBarState extends State<_CatalogFilterBar> {
                     widget.filters.copyWith(
                       system: v,
                       clearSystem: v == null,
+                      clearCategory: true,
                     ),
                   ),
                 ),
@@ -354,9 +362,21 @@ class _FilterDropdown<T> extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    T? matchedValue;
+    if (value != null) {
+      for (final item in items) {
+        if (item == value ||
+            item.toString().trim().toLowerCase() ==
+                value.toString().trim().toLowerCase()) {
+          matchedValue = item;
+          break;
+        }
+      }
+    }
+
     final child = DropdownButtonFormField<T>(
-      key: ValueKey('$label-${items.contains(value) ? value : 'none'}-$enabled'),
-      initialValue: items.contains(value) ? value : null,
+      key: ValueKey('$label-${matchedValue ?? 'none'}-$enabled'),
+      initialValue: matchedValue,
       isExpanded: true,
       isDense: true,
       decoration: InputDecoration(

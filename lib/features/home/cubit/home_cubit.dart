@@ -1,13 +1,12 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 
-import '../../../core/data/catalog_repository.dart';
 import '../../../core/models/auto_part.dart';
 import '../../../core/models/part_record.dart';
 import '../../../core/networking/supabase.dart';
 import 'home_state.dart';
 
 class HomeCubit extends Cubit<HomeState> {
-  HomeCubit() : super(HomeState(parts: catalogParts)) {
+  HomeCubit() : super(const HomeState()) {
     loadParts();
   }
 
@@ -56,29 +55,31 @@ class HomeCubit extends Cubit<HomeState> {
         emit(state.copyWith(
           parts: autoParts,
           isLoading: false,
-          availableMakes: supaMakes.isNotEmpty ? supaMakes : makes,
-          availableModels: supaModels.isNotEmpty ? supaModels : availableModels(activeFilters.make),
-          availableYears: supaYears.isNotEmpty ? supaYears : years,
-          availableSystems: supaSystems.isNotEmpty ? supaSystems : systems,
-          availablePartNames: supaPartNames.isNotEmpty
-              ? supaPartNames
-              : availableCategories(activeFilters.system),
+          availableMakes: supaMakes,
+          availableModels: supaModels,
+          availableYears: supaYears,
+          availableSystems: supaSystems,
+          availablePartNames: supaPartNames,
         ));
         return;
-      } catch (_) {
-        // Fallback to local catalog repository filtering on network failure
+      } catch (e) {
+        emit(state.copyWith(
+          parts: const [],
+          isLoading: false,
+          errorMessage: e.toString(),
+        ));
+        return;
       }
     }
 
-    final localParts = filterParts(activeFilters);
     emit(state.copyWith(
-      parts: localParts,
+      parts: const [],
       isLoading: false,
-      availableMakes: makes,
-      availableModels: availableModels(activeFilters.make),
-      availableYears: years,
-      availableSystems: systems,
-      availablePartNames: availableCategories(activeFilters.system),
+      availableMakes: const [],
+      availableModels: const [],
+      availableYears: const [],
+      availableSystems: const [],
+      availablePartNames: const [],
     ));
   }
 

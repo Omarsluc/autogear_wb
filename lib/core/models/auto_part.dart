@@ -126,9 +126,101 @@ class AutoPart {
   String get searchHaystack =>
       '$name $sku $oemNumber $make $model $category $system ${compatNotesAr ?? ''} ${englishNotes ?? ''}'.toLowerCase();
 
+  bool matchesMake(String? targetMake) {
+    if (targetMake == null || targetMake.trim().isEmpty) return true;
+    final t = targetMake.trim().toLowerCase();
+
+    // 1. Direct contains in make column
+    if (make.toLowerCase().contains(t)) return true;
+
+    // 2. Check english notes
+    if (englishNotes?.toLowerCase().contains(t) ?? false) return true;
+
+    // 3. Check arabic notes
+    if (t == 'kia' && (compatNotesAr?.contains('كيا') ?? false)) return true;
+    if (t == 'hyundai' &&
+        ((compatNotesAr?.contains('هيونداي') ?? false) ||
+            (compatNotesAr?.contains('هيونداى') ?? false))) {
+      return true;
+    }
+
+    return false;
+  }
+
+  bool matchesModel(String? targetModel) {
+    if (targetModel == null || targetModel.trim().isEmpty) return true;
+    final t = targetModel.trim().toLowerCase();
+
+    if (model.toLowerCase().contains(t)) return true;
+    if (englishNotes?.toLowerCase().contains(t) ?? false) return true;
+    if (compatNotesAr?.toLowerCase().contains(t) ?? false) return true;
+    return false;
+  }
+
   bool matchesYear(int? year) {
     if (year == null) return true;
-    return years.contains(year);
+    if (years.contains(year)) return true;
+    final yStr = year.toString();
+    if (englishNotes != null && englishNotes!.contains(yStr)) return true;
+    if (compatNotesAr != null && compatNotesAr!.contains(yStr)) return true;
+    return false;
+  }
+
+  bool matchesSystem(String? targetSystem) {
+    if (targetSystem == null || targetSystem.trim().isEmpty) return true;
+    final t = targetSystem.trim().toLowerCase();
+    final keyword = t.replaceAll(RegExp(r'\s+system$'), '').trim();
+    final sysLower = system.toLowerCase();
+    if (keyword == 'brake' || keyword == 'braking') {
+      return sysLower.contains('brak');
+    }
+    return sysLower.contains(keyword);
+  }
+
+  bool matchesCategory(String? targetCategory) {
+    if (targetCategory == null || targetCategory.trim().isEmpty) return true;
+    final t = targetCategory.trim().toLowerCase();
+    final catLower = category.toLowerCase();
+    final nameLower = name.toLowerCase();
+
+    if (t.contains('oxygen') || t.contains('oxygn')) {
+      return catLower.contains('oxygen') || catLower.contains('oxygn') ||
+             nameLower.contains('oxygen') || nameLower.contains('oxygn');
+    }
+    if (t.contains('water temperature') || t.contains('coolant temperature')) {
+      return catLower.contains('water temperature') || catLower.contains('coolant temperature') ||
+             nameLower.contains('water temperature') || nameLower.contains('coolant temperature');
+    }
+    if (t.contains('manifold absolute pressure') || t == 'map sensor' || t == 'map') {
+      return catLower.contains('manifold absolute pressure') || catLower.contains('map sensor') ||
+             nameLower.contains('manifold absolute pressure') || nameLower.contains('map sensor');
+    }
+    if (t.contains('alternator')) {
+      return catLower.contains('alternator') || nameLower.contains('alternator');
+    }
+    if (t == 'vvt sensor' || t == 'vvt') {
+      return catLower.contains('vvt') || nameLower.contains('vvt');
+    }
+    return catLower.contains(t) || nameLower.contains(t);
+  }
+
+  bool matchesSearch(String query) {
+    final q = query.trim().toLowerCase();
+    if (q.isEmpty) return true;
+
+    // Handle "and" / "or" / comma separated searches like "kia and hyundai"
+    if (q.contains(' and ') || q.contains(' or ') || q.contains(',')) {
+      final orTerms = q.split(RegExp(r'\s+(?:and|or)\s+|,\s*')).where((t) => t.trim().isNotEmpty);
+      if (orTerms.length > 1) {
+        return orTerms.any((term) => matchesSearch(term.trim()));
+      }
+    }
+
+    final cleanWords = q.split(RegExp(r'\s+')).where((w) => w.isNotEmpty).toList();
+    if (cleanWords.isEmpty) return true;
+
+    final haystack = searchHaystack;
+    return cleanWords.every((w) => haystack.contains(w));
   }
 }
 

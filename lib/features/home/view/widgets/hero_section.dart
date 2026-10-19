@@ -176,15 +176,11 @@ class _FilterPanelState extends State<_FilterPanel> {
 
     return BlocBuilder<HomeCubit, HomeState>(
       builder: (context, state) {
-        final makesList = state.availableMakes.isNotEmpty ? state.availableMakes : makes;
-        final modelsList = state.availableModels.isNotEmpty
-            ? state.availableModels
-            : availableModels(widget.filters.make);
-        final yearsList = state.availableYears.isNotEmpty ? state.availableYears : years;
-        final systemsList = state.availableSystems.isNotEmpty ? state.availableSystems : systems;
-        final partNamesList = state.availablePartNames.isNotEmpty
-            ? state.availablePartNames
-            : availableCategories(widget.filters.system);
+        final makesList = state.availableMakes;
+        final modelsList = state.availableModels;
+        final yearsList = state.availableYears;
+        final systemsList = state.availableSystems;
+        final partNamesList = state.availablePartNames;
 
         return Container(
           padding: const EdgeInsets.all(24),
@@ -231,6 +227,8 @@ class _FilterPanelState extends State<_FilterPanel> {
                       widget.filters.copyWith(
                         make: v,
                         clearMake: v == null,
+                        clearModel: true,
+                        clearCategory: true,
                       ),
                     ),
                   ),
@@ -271,6 +269,7 @@ class _FilterPanelState extends State<_FilterPanel> {
                       widget.filters.copyWith(
                         system: v,
                         clearSystem: v == null,
+                        clearCategory: true,
                       ),
                     ),
                   ),
@@ -344,9 +343,21 @@ class _FilterDropdown<T> extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    T? matchedValue;
+    if (value != null) {
+      for (final item in items) {
+        if (item == value ||
+            item.toString().trim().toLowerCase() ==
+                value.toString().trim().toLowerCase()) {
+          matchedValue = item;
+          break;
+        }
+      }
+    }
+
     final child = DropdownButtonFormField<T>(
-      key: ValueKey('$label-${items.contains(value) ? value : 'none'}-$enabled'),
-      initialValue: items.contains(value) ? value : null,
+      key: ValueKey('$label-${matchedValue ?? 'none'}-$enabled'),
+      initialValue: matchedValue,
       isExpanded: true,
       isDense: true,
       decoration: InputDecoration(
