@@ -1,5 +1,6 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+import '../../../core/localization/filter_translation_service.dart';
 import '../../../core/models/auto_part.dart';
 import '../../../core/models/part_record.dart';
 import '../../../core/networking/supabase.dart';
@@ -15,6 +16,9 @@ class HomeCubit extends Cubit<HomeState> {
     emit(state.copyWith(filters: activeFilters, isLoading: true, clearError: true));
 
     if (SupabaseService.isInitialized) {
+      if (!FilterTranslationService.instance.isInitialized) {
+        FilterTranslationService.instance.init();
+      }
       try {
         final service = SupabaseService.instance;
 

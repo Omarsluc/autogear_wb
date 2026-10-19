@@ -46,7 +46,7 @@ class MakesSection extends StatelessWidget {
                       Icon(Icons.directions_car, size: 18, color: AppColors.primary.withValues(alpha: 0.7)),
                       const SizedBox(width: 8),
                       Text(
-                        make,
+                        AppStrings.translateFilter(context, make, 'make'),
                         style: const TextStyle(
                           fontWeight: FontWeight.w600,
                           color: AppColors.textPrimary,
@@ -175,7 +175,10 @@ class _SystemCard extends StatelessWidget {
                   Icon(_icon, color: AppColors.primary, size: 32),
                   const SizedBox(width: 12),
                   Expanded(
-                    child: Text(system, style: Theme.of(context).textTheme.titleLarge),
+                    child: Text(
+                      AppStrings.translateFilter(context, system, 'system'),
+                      style: Theme.of(context).textTheme.titleLarge,
+                    ),
                   ),
                 ],
               ),
@@ -185,7 +188,10 @@ class _SystemCard extends StatelessWidget {
                 runSpacing: 6,
                 children: categories.take(6).map((cat) {
                   return ActionChip(
-                    label: Text(cat, style: const TextStyle(fontSize: 11)),
+                    label: Text(
+                      AppStrings.translateFilter(context, cat, 'item_type'),
+                      style: const TextStyle(fontSize: 11),
+                    ),
                     backgroundColor: AppColors.lightBlue,
                     onPressed: () => onCategoryTap(cat),
                   );

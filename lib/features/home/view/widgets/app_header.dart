@@ -50,36 +50,77 @@ class AppHeader extends StatelessWidget implements PreferredSizeWidget {
 
   @override
   Widget build(BuildContext context) {
+    final screenWidth = MediaQuery.sizeOf(context).width;
+    final isVerySmall = screenWidth < 360;
+    final isPhone = screenWidth < 600;
+    final isTablet = screenWidth < 900;
+    final isAr = AppStrings.isArabic(context);
+
+    final double logoSize = isVerySmall ? 32 : (isPhone ? 38 : (isTablet ? 44 : 48));
+    final double spacing = isVerySmall ? 6 : (isPhone ? 8 : 12);
+    final double titleFontSize = isVerySmall ? 15 : (isPhone ? 17 : (isTablet ? 20 : 22));
+    final double subtitleFontSize = isVerySmall ? 9 : (isPhone ? 9.5 : (isTablet ? 10.5 : 11));
+    final double letterSpacing = isAr ? 0.0 : (isPhone ? 1.0 : 2.0);
+    final double titleSpacing = isPhone ? (isVerySmall ? 6.0 : 10.0) : 16.0;
+
     return AppBar(
       toolbarHeight: 72,
-      title: Row(
-        children: [
-          SizedBox(height: 50,width: 50,child: Image(image: AssetImage(Assets.imagesAgIcon))),
-          const SizedBox(width: 12),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisAlignment: MainAxisAlignment.center,
+      centerTitle: false,
+      titleSpacing: titleSpacing,
+      title: InkWell(
+        onTap: () => onNavigate('home'),
+        borderRadius: BorderRadius.circular(8),
+        hoverColor: Colors.transparent,
+        splashColor: Colors.transparent,
+        highlightColor: Colors.transparent,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 2),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
             children: [
-              Text(
-                AppStrings.tr(context, 'app_title'),
-                style: const TextStyle(
-                  fontSize: 22,
-                  fontWeight: FontWeight.w800,
-                  letterSpacing: 2,
-                  color: Colors.white,
+              SizedBox(
+                height: logoSize,
+                width: logoSize,
+                child: const Image(
+                  image: AssetImage(Assets.imagesAgIcon),
+                  fit: BoxFit.contain,
                 ),
               ),
-              Text(
-                AppStrings.tr(context, 'app_subtitle'),
-                style: TextStyle(
-                  fontSize: 11,
-                  color: Colors.white.withValues(alpha: 0.85),
-                  fontWeight: FontWeight.w400,
+              SizedBox(width: spacing),
+              Flexible(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      AppStrings.tr(context, 'app_title'),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        fontSize: titleFontSize,
+                        fontWeight: FontWeight.w800,
+                        letterSpacing: letterSpacing,
+                        color: Colors.white,
+                      ),
+                    ),
+                    if (!isVerySmall || screenWidth >= 320)
+                      Text(
+                        AppStrings.tr(context, 'app_subtitle'),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          fontSize: subtitleFontSize,
+                          color: Colors.white.withValues(alpha: 0.85),
+                          fontWeight: FontWeight.w400,
+                        ),
+                      ),
+                  ],
                 ),
               ),
             ],
           ),
-        ],
+        ),
       ),
       actions: [
         if (!isMobile)
@@ -100,6 +141,8 @@ class AppHeader extends StatelessWidget implements PreferredSizeWidget {
           selector: (state) => state.itemCount,
           builder: (context, itemCount) {
             return IconButton(
+              visualDensity: isPhone ? VisualDensity.compact : VisualDensity.standard,
+              padding: isPhone ? const EdgeInsets.all(6) : const EdgeInsets.all(8),
               tooltip: AppStrings.tr(context, 'cart'),
               onPressed: () => _openCart(context),
               icon: Badge(
@@ -116,6 +159,7 @@ class AppHeader extends StatelessWidget implements PreferredSizeWidget {
               return PopupMenuButton<String>(
                 tooltip: 'Account',
                 icon: const Icon(Icons.account_circle_outlined),
+                padding: isPhone ? const EdgeInsets.all(6) : const EdgeInsets.all(8),
                 onSelected: (value) {
                   if (value == 'signout') {
                     context.read<AuthCubit>().signOut();
@@ -155,6 +199,8 @@ class AppHeader extends StatelessWidget implements PreferredSizeWidget {
               );
             }
             return IconButton(
+              visualDensity: isPhone ? VisualDensity.compact : VisualDensity.standard,
+              padding: isPhone ? const EdgeInsets.all(6) : const EdgeInsets.all(8),
               tooltip: AppStrings.tr(context, 'sign_in'),
               onPressed: () => _openAuth(context),
               icon: const Icon(Icons.login),
@@ -163,6 +209,8 @@ class AppHeader extends StatelessWidget implements PreferredSizeWidget {
         ),
         if (isMobile)
           IconButton(
+            visualDensity: isPhone ? VisualDensity.compact : VisualDensity.standard,
+            padding: isPhone ? const EdgeInsets.all(6) : const EdgeInsets.all(8),
             icon: const Icon(Icons.menu),
             onPressed: () => drawerKey?.currentState?.openEndDrawer(),
           )
@@ -247,28 +295,41 @@ class MobileDrawer extends StatelessWidget {
                 Row(
                   children: [
                     const SizedBox(
-                      height: 44,
-                      width: 44,
-                      child: Image(image: AssetImage(Assets.imagesAgIcon)),
+                      height: 42,
+                      width: 42,
+                      child: Image(
+                        image: AssetImage(Assets.imagesAgIcon),
+                        fit: BoxFit.contain,
+                      ),
                     ),
                     const SizedBox(width: 12),
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          AppStrings.tr(context, 'app_title'),
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 22,
-                            fontWeight: FontWeight.w800,
-                            letterSpacing: 2,
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            AppStrings.tr(context, 'app_title'),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 20,
+                              fontWeight: FontWeight.w800,
+                              letterSpacing: isAr ? 0.0 : 1.5,
+                            ),
                           ),
-                        ),
-                        Text(
-                          AppStrings.tr(context, 'app_subtitle'),
-                          style: TextStyle(color: Colors.white.withValues(alpha: 0.85), fontSize: 11),
-                        ),
-                      ],
+                          Text(
+                            AppStrings.tr(context, 'app_subtitle'),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(
+                              color: Colors.white.withValues(alpha: 0.85),
+                              fontSize: 11,
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
                   ],
                 ),

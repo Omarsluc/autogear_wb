@@ -24,6 +24,7 @@ abstract final class SupabaseTables {
   static const partCompatibility = 'part_compatibility';
   static const orders = 'orders';
   static const orderItems = 'order_items';
+  static const translations = 'translations';
 }
 
 class SupabaseServiceException implements Exception {

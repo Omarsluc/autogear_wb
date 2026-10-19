@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'filter_translation_service.dart';
 
 class AppStrings {
   static bool isArabic(BuildContext context) {
@@ -11,10 +12,15 @@ class AppStrings {
     return map[key] ?? _en[key] ?? key;
   }
 
+  static String translateFilter(BuildContext context, String term, [String? kind]) {
+    final ar = isArabic(context);
+    return FilterTranslationService.instance.translate(term, kind: kind, isArabic: ar);
+  }
+
   static const Map<String, String> _en = {
     // Header & Nav
     'app_title': 'AUTO GEAR',
-    'app_subtitle': 'Aftermarket Auto Parts Catalog',
+    'app_subtitle': 'Online Platform',
     'nav_catalog': 'Catalog',
     'nav_makes': 'Makes',
     'nav_systems': 'Systems',
@@ -105,7 +111,7 @@ class AppStrings {
   static const Map<String, String> _ar = {
     // Header & Nav
     'app_title': 'أوتو جير',
-    'app_subtitle': 'كتالوج قطع غيار السيارات',
+    'app_subtitle': 'متجر قطع غيار السيارات',
     'nav_catalog': 'الكتالوج',
     'nav_makes': 'الماركات',
     'nav_systems': 'الأنظمة',

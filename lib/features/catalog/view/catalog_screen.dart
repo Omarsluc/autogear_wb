@@ -267,6 +267,7 @@ class _CatalogFilterBarState extends State<_CatalogFilterBar> {
                   label: AppStrings.tr(context, 'select_make'),
                   value: widget.filters.make,
                   items: makesList,
+                  itemLabel: (v) => AppStrings.translateFilter(context, v, 'make'),
                   width: widget.isWide ? 180 : (width > 500 ? 160 : null),
                   enabled: true,
                   onChanged: (v) => widget.onFiltersChanged(
@@ -282,6 +283,7 @@ class _CatalogFilterBarState extends State<_CatalogFilterBar> {
                   label: AppStrings.tr(context, 'select_model'),
                   value: widget.filters.model,
                   items: modelsList,
+                  itemLabel: (v) => AppStrings.translateFilter(context, v, 'model'),
                   width: widget.isWide ? 180 : (width > 500 ? 160 : null),
                   enabled: true,
                   onChanged: (v) => widget.onFiltersChanged(
@@ -309,6 +311,7 @@ class _CatalogFilterBarState extends State<_CatalogFilterBar> {
                   label: AppStrings.tr(context, 'select_system'),
                   value: widget.filters.system,
                   items: systemsList,
+                  itemLabel: (v) => AppStrings.translateFilter(context, v, 'system'),
                   width: widget.isWide ? 200 : (width > 500 ? 180 : null),
                   enabled: true,
                   onChanged: (v) => widget.onFiltersChanged(
@@ -323,6 +326,7 @@ class _CatalogFilterBarState extends State<_CatalogFilterBar> {
                   label: AppStrings.tr(context, 'select_part'),
                   value: widget.filters.category,
                   items: partNamesList,
+                  itemLabel: (v) => AppStrings.translateFilter(context, v, 'item_type'),
                   width: widget.isWide ? 200 : (width > 500 ? 180 : null),
                   enabled: true,
                   onChanged: (v) => widget.onFiltersChanged(

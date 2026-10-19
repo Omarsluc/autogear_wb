@@ -7,6 +7,7 @@ import 'core/networking/supabase.dart';
 import 'core/theme/app_theme.dart';
 import 'features/auth/cubit/auth_cubit.dart';
 import 'features/cart/cubit/cart_cubit.dart';
+import 'core/localization/filter_translation_service.dart';
 import 'features/home/cubit/home_cubit.dart';
 import 'features/home/view/home_screen.dart';
 
@@ -15,6 +16,7 @@ Future<void> main() async {
 
   if (SupabaseConfig.isConfigured) {
     await SupabaseService.initialize();
+    await FilterTranslationService.instance.init();
   }
 
   runApp(const AutoGearApp());

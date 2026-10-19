@@ -86,30 +86,30 @@ class CatalogSection extends StatelessWidget {
               children: [
                 if (filters.make != null)
                   CatalogFilterChip(
-                    label: 'Make: ${filters.make}',
+                    label: '${AppStrings.tr(context, 'make')}: ${AppStrings.translateFilter(context, filters.make!, 'make')}',
                     onRemove: () =>
                         onFiltersChanged(filters.copyWith(clearMake: true, clearModel: true)),
                   ),
                 if (filters.model != null)
                   CatalogFilterChip(
-                    label: 'Model: ${filters.model}',
+                    label: '${AppStrings.tr(context, 'model')}: ${AppStrings.translateFilter(context, filters.model!, 'model')}',
                     onRemove: () => onFiltersChanged(filters.copyWith(clearModel: true)),
                   ),
                 if (filters.year != null)
                   CatalogFilterChip(
-                    label: 'Year: ${filters.year}',
+                    label: '${AppStrings.tr(context, 'years')}: ${filters.year}',
                     onRemove: () => onFiltersChanged(filters.copyWith(clearYear: true)),
                   ),
                 if (filters.system != null)
                   CatalogFilterChip(
-                    label: 'System: ${filters.system}',
+                    label: '${AppStrings.tr(context, 'system')}: ${AppStrings.translateFilter(context, filters.system!, 'system')}',
                     onRemove: () => onFiltersChanged(
                       filters.copyWith(clearSystem: true, clearCategory: true),
                     ),
                   ),
                 if (filters.category != null)
                   CatalogFilterChip(
-                    label: 'Part: ${filters.category}',
+                    label: '${AppStrings.tr(context, 'category')}: ${AppStrings.translateFilter(context, filters.category!, 'item_type')}',
                     onRemove: () => onFiltersChanged(filters.copyWith(clearCategory: true)),
                   ),
                 if (filters.searchQuery.isNotEmpty)
@@ -402,11 +402,11 @@ class _PartCardState extends State<PartCard> {
               PartInfoRow(label: 'SKU', value: part.sku),
               if (part.oemNumber.isNotEmpty)
                 PartInfoRow(label: 'OEM', value: part.oemNumber),
-              PartInfoRow(label: 'Make', value: part.make),
-              PartInfoRow(label: 'Model', value: part.model),
-              PartInfoRow(label: 'Years', value: part.years.isNotEmpty ? part.years.join(', ') : 'N/A'),
-              PartInfoRow(label: 'System', value: part.system),
-              PartInfoRow(label: 'Category', value: part.category),
+              PartInfoRow(label: AppStrings.tr(context, 'make'), value: AppStrings.translateFilter(context, part.make, 'make')),
+              PartInfoRow(label: AppStrings.tr(context, 'model'), value: AppStrings.translateFilter(context, part.model, 'model')),
+              PartInfoRow(label: AppStrings.tr(context, 'years'), value: part.years.isNotEmpty ? part.years.join(', ') : 'N/A'),
+              PartInfoRow(label: AppStrings.tr(context, 'system'), value: AppStrings.translateFilter(context, part.system, 'system')),
+              PartInfoRow(label: AppStrings.tr(context, 'category'), value: AppStrings.translateFilter(context, part.category, 'item_type')),
               const SizedBox(height: 12),
               _buildPriceSection(context, part),
               const SizedBox(height: 12),
@@ -665,7 +665,7 @@ class _PartCardState extends State<PartCard> {
                             Icon(_iconForSystem(part.system), size: 13, color: AppColors.primary),
                             const SizedBox(width: 4),
                             Text(
-                              part.system,
+                              AppStrings.translateFilter(context, part.system, 'system'),
                               style: const TextStyle(
                                 fontSize: 10,
                                 fontWeight: FontWeight.w600,
@@ -715,7 +715,7 @@ class _PartCardState extends State<PartCard> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          part.name,
+                          AppStrings.translateFilter(context, part.name, 'item_type'),
                           style: const TextStyle(
                             fontSize: 15,
                             fontWeight: FontWeight.bold,
@@ -733,7 +733,7 @@ class _PartCardState extends State<PartCard> {
                             const SizedBox(width: 4),
                             Expanded(
                               child: Text(
-                                '${part.make} ${part.model}${part.years.isNotEmpty ? ' (${part.years.first}–${part.years.last})' : ''}',
+                                '${AppStrings.translateFilter(context, part.make, 'make')} ${AppStrings.translateFilter(context, part.model, 'model')}${part.years.isNotEmpty ? ' (${part.years.first}–${part.years.last})' : ''}',
                                 style: const TextStyle(fontSize: 12, color: AppColors.textSecondary),
                                 overflow: TextOverflow.ellipsis,
                               ),
@@ -943,7 +943,7 @@ class MakesSection extends StatelessWidget {
                       Icon(Icons.directions_car, size: 18, color: AppColors.primary.withValues(alpha: 0.7)),
                       const SizedBox(width: 8),
                       Text(
-                        make,
+                        AppStrings.translateFilter(context, make, 'make'),
                         style: const TextStyle(
                           fontWeight: FontWeight.w600,
                           color: AppColors.textPrimary,
@@ -1073,7 +1073,10 @@ class _SystemCard extends StatelessWidget {
                   Icon(_icon, color: AppColors.primary, size: 32),
                   const SizedBox(width: 12),
                   Expanded(
-                    child: Text(system, style: Theme.of(context).textTheme.titleLarge),
+                    child: Text(
+                      AppStrings.translateFilter(context, system, 'system'),
+                      style: Theme.of(context).textTheme.titleLarge,
+                    ),
                   ),
                 ],
               ),
@@ -1083,7 +1086,10 @@ class _SystemCard extends StatelessWidget {
                 runSpacing: 6,
                 children: categories.take(6).map((cat) {
                   return ActionChip(
-                    label: Text(cat, style: const TextStyle(fontSize: 11)),
+                    label: Text(
+                      AppStrings.translateFilter(context, cat, 'item_type'),
+                      style: const TextStyle(fontSize: 11),
+                    ),
                     backgroundColor: AppColors.lightBlue,
                     onPressed: () => onCategoryTap(cat),
                   );
