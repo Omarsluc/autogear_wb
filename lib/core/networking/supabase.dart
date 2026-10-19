@@ -59,6 +59,7 @@ class PartQueryFilters {
   final int limit;
   final int offset;
 }
+// part query filter end
 
 /// Payload for creating a new order with line items.
 class CreateOrderRequest {
